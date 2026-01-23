@@ -428,7 +428,7 @@ class YouTubeAPI:
                     return filepath
                 
                 ydl_opts = {
-                    'format': 'best',
+                    'format': 'bestaudio/best',
                     'outtmpl': filepath,
                     'postprocessors': [{
                         'key': 'FFmpegExtractAudio',
@@ -451,7 +451,7 @@ class YouTubeAPI:
                     'continuedl': True,
                     'force_ipv4': True,
                     'age_limit': None,
-                    'extractor_args': {'youtube': {'player_client': ['android', 'web']}},
+                    'extractor_args': {'youtube': {'player_client': ['android', 'web', 'ios']}},
                 }
                 
                 loop = asyncio.get_running_loop()
@@ -496,7 +496,7 @@ class YouTubeAPI:
                     'continuedl': True,
                     'force_ipv4': True,
                     'age_limit': None,
-                    'extractor_args': {'youtube': {'player_client': ['android', 'web']}},
+                    'extractor_args': {'youtube': {'player_client': ['android', 'web', 'ios']}},
                 }
                 
                 loop = asyncio.get_running_loop()
@@ -540,7 +540,7 @@ class YouTubeAPI:
                     'continuedl': True,
                     'force_ipv4': True,
                     'age_limit': None,
-                    'extractor_args': {'youtube': {'player_client': ['android', 'web']}},
+                    'extractor_args': {'youtube': {'player_client': ['android', 'web', 'ios']}},
                 }
                 
                 loop = asyncio.get_running_loop()
@@ -566,7 +566,7 @@ class YouTubeAPI:
                     return filepath
                 
                 ydl_opts = {
-                    'format': 'best',
+                    'format': 'bestaudio/best',
                     'outtmpl': filepath,
                     'postprocessors': [{
                         'key': 'FFmpegExtractAudio',
@@ -589,7 +589,7 @@ class YouTubeAPI:
                     'continuedl': True,
                     'force_ipv4': True,
                     'age_limit': None,
-                    'extractor_args': {'youtube': {'player_client': ['android', 'web']}},
+                    'extractor_args': {'youtube': {'player_client': ['android', 'web', 'ios']}},
                 }
                 
                 loop = asyncio.get_running_loop()
