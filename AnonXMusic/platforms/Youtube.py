@@ -437,11 +437,16 @@ class YouTubeAPI:
                     'cookiefile': cookie_txt_file(),
                     'quiet': True,
                     'no_warnings': True,
-                    'retries': 10,
-                    'fragment_retries': 10,
+                    'retries': 20,
+                    'fragment_retries': 20,
                     'skip_unavailable_fragments': True,
                     'geo_bypass': True,
                     'extract_flat': False,
+                    'sleep_interval': 1,
+                    'max_sleep_interval': 5,
+                    'concurrent_fragment_downloads': 3,
+                    'http_chunk_size': 1048576,
+                    'continuedl': True,
                 }
                 
                 loop = asyncio.get_running_loop()
@@ -472,11 +477,16 @@ class YouTubeAPI:
                     'cookiefile': cookie_txt_file(),
                     'quiet': True,
                     'no_warnings': True,
-                    'retries': 10,
-                    'fragment_retries': 10,
+                    'retries': 20,
+                    'fragment_retries': 20,
                     'skip_unavailable_fragments': True,
                     'geo_bypass': True,
                     'extract_flat': False,
+                    'sleep_interval': 1,
+                    'max_sleep_interval': 5,
+                    'concurrent_fragment_downloads': 3,
+                    'http_chunk_size': 1048576,
+                    'continuedl': True,
                 }
                 
                 loop = asyncio.get_running_loop()
@@ -506,11 +516,16 @@ class YouTubeAPI:
                     'cookiefile': cookie_txt_file(),
                     'quiet': True,
                     'no_warnings': True,
-                    'retries': 10,
-                    'fragment_retries': 10,
+                    'retries': 20,
+                    'fragment_retries': 20,
                     'skip_unavailable_fragments': True,
                     'geo_bypass': True,
                     'extract_flat': False,
+                    'sleep_interval': 1,
+                    'max_sleep_interval': 5,
+                    'concurrent_fragment_downloads': 3,
+                    'http_chunk_size': 1048576,
+                    'continuedl': True,
                 }
                 
                 loop = asyncio.get_running_loop()
@@ -545,11 +560,16 @@ class YouTubeAPI:
                     'cookiefile': cookie_txt_file(),
                     'quiet': True,
                     'no_warnings': True,
-                    'retries': 10,
-                    'fragment_retries': 10,
+                    'retries': 20,
+                    'fragment_retries': 20,
                     'skip_unavailable_fragments': True,
                     'geo_bypass': True,
                     'extract_flat': False,
+                    'sleep_interval': 1,
+                    'max_sleep_interval': 5,
+                    'concurrent_fragment_downloads': 3,
+                    'http_chunk_size': 1048576,
+                    'continuedl': True,
                 }
                 
                 loop = asyncio.get_running_loop()
