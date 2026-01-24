@@ -72,23 +72,28 @@ autoclean = []
 confirmer = {}
 file_cache: dict[str, float] = {}
 
-START_IMG_URL = ["https://te.legra.ph/file/5fd13f2cc0d03bce9f7f2.jpg",
-                 "https://te.legra.ph/file/c15d01b3e6b40ea141dc9.jpg",
-                 "https://te.legra.ph/file/5fd13f2cc0d03bce9f7f2.jpg"]
+START_IMG_URL = [
+    "https://image2url.com/r2/default/images/1769269338835-d5ce1f25-55d6-45fc-b9ad-c04ae647827e.jpg",
+    "https://image2url.com/r2/default/images/1769269355185-77c5d002-ce9a-47ce-aba1-d1b033e60472.jpg",
+    "https://image2url.com/r2/default/images/1769269377267-3084111d-b3fe-4e5e-be58-418b26f25c4d.jpg",
+    "https://image2url.com/r2/default/images/1769269399286-a06b9ba6-3f29-47a5-9a32-9f0c3e0a905c.jpg",
+    "https://image2url.com/r2/default/images/1769269443873-5d739aec-a837-45be-aa83-409ae4259c5e.jpg",
+    "https://image2url.com/r2/default/images/1769269553883-e7fa9182-2d84-4961-a2bf-4ae63e810b1e.jpg"
+]
     
 PING_IMG_URL = getenv(
-    "PING_IMG_URL", "https://telegra.ph/file/87f680aead03443f291b0.jpg"
+    "PING_IMG_URL", "https://image2url.com/r2/default/images/1768792821746-ad62ab76-1fdc-45d7-8b5e-a5343577d6bb.jpg"
 )
-PLAYLIST_IMG_URL = "https://graph.org/file/c95a687e777b55be1c792.jpg"
-STATS_IMG_URL = "https://telegra.ph/file/edd388a42dd2c499fd868.jpg"
-TELEGRAM_AUDIO_URL = "https://telegra.ph/file/492a3bb2e880d19750b79.jpg"
-TELEGRAM_VIDEO_URL = "https://telegra.ph/file/492a3bb2e880d19750b79.jpg"
-STREAM_IMG_URL = "https://graph.org/file/ff2af8d4d10afa1baf49e.jpg"
-SOUNCLOUD_IMG_URL = "https://graph.org/file/c95a687e777b55be1c792.jpg"
-YOUTUBE_IMG_URL = "https://graph.org/file/e8730fdece86a1166f608.jpg"
-SPOTIFY_ARTIST_IMG_URL = "https://graph.org/file/0bb6f36796d496b4254ff.jpg"
-SPOTIFY_ALBUM_IMG_URL = "https://graph.org/file/0bb6f36796d496b4254ff.jpg"
-SPOTIFY_PLAYLIST_IMG_URL = "https://graph.org/file/0bb6f36796d496b4254ff.jpg"
+PLAYLIST_IMG_URL = "https://image2url.com/r2/default/images/1768793789039-2d4017a9-b0a3-43ec-837c-82855012c3fb.jpg"
+STATS_IMG_URL = "https://image2url.com/r2/default/images/1769269301996-47b1b24e-6230-49ca-8b2d-35b5461e7218.jpg"
+TELEGRAM_AUDIO_URL = "https://image2url.com/r2/default/images/1768793789039-2d4017a9-b0a3-43ec-837c-82855012c3fb.jpg"
+TELEGRAM_VIDEO_URL = "https://image2url.com/r2/default/images/1768793789039-2d4017a9-b0a3-43ec-837c-82855012c3fb.jpg"
+STREAM_IMG_URL = "https://image2url.com/r2/default/images/1768793789039-2d4017a9-b0a3-43ec-837c-82855012c3fb.jpg"
+SOUNCLOUD_IMG_URL = "https://image2url.com/r2/default/images/1768793789039-2d4017a9-b0a3-43ec-837c-82855012c3fb.jpg"
+YOUTUBE_IMG_URL = "https://image2url.com/r2/default/images/1768793789039-2d4017a9-b0a3-43ec-837c-82855012c3fb.jpg"
+SPOTIFY_ARTIST_IMG_URL = "https://image2url.com/r2/default/images/1768793789039-2d4017a9-b0a3-43ec-837c-82855012c3fb.jpg"
+SPOTIFY_ALBUM_IMG_URL = "https://image2url.com/r2/default/images/1768793789039-2d4017a9-b0a3-43ec-837c-82855012c3fb.jpg"
+SPOTIFY_PLAYLIST_IMG_URL = "https://image2url.com/r2/default/images/1768793789039-2d4017a9-b0a3-43ec-837c-82855012c3fb.jpg"
 
 DEFAULT_THUMB = START_IMG_URL[0]  # Default thumbnail for streams
 
