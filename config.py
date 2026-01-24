@@ -30,9 +30,6 @@ LOGGER_ID = int(getenv("LOGGER_ID", "-1003142281080"))
 # Get this value from @FallenxBot on Telegram by /id
 OWNER_ID = int(getenv("OWNER_ID", "7976004718"))
 
-SUPPORT_CHANNEL = getenv("SUPPORT_CHANNEL", "https://t.me/maverickbots")
-SUPPORT_CHAT = getenv("SUPPORT_CHAT", "https://t.me/hetagic")
-
 # Set this to True if you want the assistant to automatically leave chats after an interval
 AUTO_LEAVING_ASSISTANT = bool(getenv("AUTO_LEAVING_ASSISTANT", False))
 ASSISTANT_LEAVE_TIME = int(getenv("ASSISTANT_LEAVE_TIME",  5400))
@@ -101,16 +98,3 @@ def time_to_seconds(time):
 
 
 DURATION_LIMIT = int(time_to_seconds(f"{DURATION_LIMIT_MIN}:360"))
-
-
-if SUPPORT_CHANNEL:
-    if not re.match("(?:http|https)://", SUPPORT_CHANNEL):
-        raise SystemExit(
-            "[ERROR] - Your SUPPORT_CHANNEL url is wrong. Please ensure that it starts with https://"
-        )
-
-if SUPPORT_CHAT:
-    if not re.match("(?:http|https)://", SUPPORT_CHAT):
-        raise SystemExit(
-            "[ERROR] - Your SUPPORT_CHAT url is wrong. Please ensure that it starts with https://"
-        )

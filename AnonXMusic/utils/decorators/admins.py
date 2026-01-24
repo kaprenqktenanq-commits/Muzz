@@ -13,7 +13,7 @@ from AnonXMusic.utils.database import (
     is_nonadmin_chat,
     is_skipmode,
 )
-from config import SUPPORT_CHAT, adminlist, confirmer
+from config import adminlist, confirmer
 from strings import get_string
 
 from ..formatters import int_to_alpha
@@ -24,7 +24,7 @@ def AdminRightsCheck(mystic):
         if await is_maintenance() is False:
             if message.from_user.id not in SUDOERS:
                 return await message.reply_text(
-                    text=f"{app.mention} ɪs ᴜɴᴅᴇʀ ᴍᴀɪɴᴛᴇɴᴀɴᴄᴇ, ᴠɪsɪᴛ <a href={SUPPORT_CHAT}>sᴜᴘᴘᴏʀᴛ ᴄʜᴀᴛ</a> ғᴏʀ ᴋɴᴏᴡɪɴɢ ᴛʜᴇ ʀᴇᴀsᴏɴ.",
+                    text=f"{app.mention} ɪs ᴜɴᴅᴇʀ ᴍᴀɪɴᴛᴇɴᴀɴᴄᴇ.",
                     disable_web_page_preview=True,
                 )
 
@@ -123,7 +123,7 @@ def AdminActual(mystic):
         if await is_maintenance() is False:
             if message.from_user.id not in SUDOERS:
                 return await message.reply_text(
-                    text=f"{app.mention} ɪs ᴜɴᴅᴇʀ ᴍᴀɪɴᴛᴇɴᴀɴᴄᴇ, ᴠɪsɪᴛ <a href={SUPPORT_CHAT}>sᴜᴘᴘᴏʀᴛ ᴄʜᴀᴛ</a> ғᴏʀ ᴋɴᴏᴡɪɴɢ ᴛʜᴇ ʀᴇᴀsᴏɴ.",
+                    text=f"{app.mention} ɪs ᴜɴᴅᴇʀ ᴍᴀɪɴᴛᴇɴᴀɴᴄᴇ.",
                     disable_web_page_preview=True,
                 )
 

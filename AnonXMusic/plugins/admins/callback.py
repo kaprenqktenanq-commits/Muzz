@@ -25,7 +25,6 @@ from config import (
     BANNED_USERS,
     SOUNCLOUD_IMG_URL,
     STREAM_IMG_URL,
-    SUPPORT_CHAT,
     TELEGRAM_AUDIO_URL,
     TELEGRAM_VIDEO_URL,
     adminlist,
@@ -315,7 +314,7 @@ async def del_back_playlist(client, CallbackQuery:CallbackQuery, _):
                     if str(streamtype) == "audio"
                     else TELEGRAM_VIDEO_URL,
                     caption=_["stream_1"].format(
-                        SUPPORT_CHAT, title[:23], duration, user
+                        title[:23], duration, user
                     ),
                     reply_markup=InlineKeyboardMarkup(button),
                 )
@@ -328,7 +327,7 @@ async def del_back_playlist(client, CallbackQuery:CallbackQuery, _):
                     if str(streamtype) == "audio"
                     else TELEGRAM_VIDEO_URL,
                     caption=_["stream_1"].format(
-                        SUPPORT_CHAT, title[:23], duration, user
+                        title[:23], duration, user
                     ),
                     reply_markup=InlineKeyboardMarkup(button),
                 )

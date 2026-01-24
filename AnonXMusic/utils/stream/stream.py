@@ -243,7 +243,7 @@ async def stream(
                 original_chat_id,
                 photo=config.SOUNCLOUD_IMG_URL,
                 caption=_["stream_1"].format(
-                    config.SUPPORT_CHAT, title[:23], duration_min, user_name
+                    title[:23], duration_min, user_name
                 ),
                 reply_markup=InlineKeyboardMarkup(button),
             )
