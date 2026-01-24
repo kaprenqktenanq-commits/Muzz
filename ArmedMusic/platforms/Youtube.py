@@ -346,7 +346,7 @@ class YouTubeAPI:
                 if os.path.exists(filepath):
                     return filepath
                 try:
-                    info_opts = {'quiet': True, 'no_warnings': True, 'extract_flat': False, 'http_headers': {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36', 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8', 'Accept-Language': 'en-us,en;q=0.5', 'Sec-Fetch-Mode': 'navigate', 'Sec-Fetch-Dest': 'document', 'Sec-Fetch-Site': 'none', 'Sec-Fetch-User': '?1', 'Upgrade-Insecure-Requests': '1'}, 'extractor_args': {'youtube': {'player_client': ['ios', 'android', 'web'], 'player_skip': ['js', 'webpage'], 'innertube_client': 'ios'}}}
+                    info_opts = {'quiet': True, 'no_warnings': True, 'extract_flat': False, 'http_headers': {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36', 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8', 'Accept-Language': 'en-us,en;q=0.5', 'Sec-Fetch-Mode': 'navigate', 'Sec-Fetch-Dest': 'document', 'Sec-Fetch-Site': 'none', 'Sec-Fetch-User': '?1', 'Upgrade-Insecure-Requests': '1'}, 'extractor_args': {'youtube': {'player_client': ['ios', 'android', 'web'], 'player_skip': ['js', 'webpage'], 'innertube_client': 'ios'}}}
                     with yt_dlp.YoutubeDL(info_opts) as ydl:
                         info = ydl.extract_info(f'https://www.youtube.com/watch?v={vid_id}', download=False)
                         formats = info.get('formats', [])
@@ -522,6 +522,7 @@ class YouTubeAPI:
                         'extractor_args': {'youtube': {'player_client': ['web_safari'], 'player_skip': ['js'], 'innertube_client': 'web_safari'}}
                     }
                 ]
+                for i, ydl_opts in enumerate(ydl_opts_list):
                     try:
                         logger.info(f'Trying download configuration {i + 1} for {vid_id}')
                         if cookie_file and 'cookiefile' not in ydl_opts:
@@ -554,7 +555,7 @@ class YouTubeAPI:
                 os.makedirs(os.path.dirname(filepath), exist_ok=True)
                 if os.path.exists(filepath):
                     return filepath
-                ydl_opts = {'format': 'best[height<=720]/best', 'outtmpl': filepath, 'quiet': True, 'no_warnings': True, 'retries': 10, 'fragment_retries': 10, 'skip_unavailable_fragments': True, 'http_headers': {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36', 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8', 'Accept-Language': 'en-us,en;q=0.5', 'Sec-Fetch-Mode': 'navigate', 'Sec-Fetch-Dest': 'document', 'Sec-Fetch-Site': 'none', 'Sec-Fetch-User': '?1', 'Upgrade-Insecure-Requests': '1'}, 'extractor_args': {'youtube': {'player_client': ['web'], 'player_skip': ['js'], 'innertube_client': 'web'}}}}
+                ydl_opts = {'format': 'best[height<=720]/best', 'outtmpl': filepath, 'quiet': True, 'no_warnings': True, 'retries': 10, 'fragment_retries': 10, 'skip_unavailable_fragments': True, 'http_headers': {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36', 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8', 'Accept-Language': 'en-us,en;q=0.5', 'Sec-Fetch-Mode': 'navigate', 'Sec-Fetch-Dest': 'document', 'Sec-Fetch-Site': 'none', 'Sec-Fetch-User': '?1', 'Upgrade-Insecure-Requests': '1'}, 'extractor_args': {'youtube': {'player_client': ['web'], 'player_skip': ['js'], 'innertube_client': 'web'}}}
                 if YOUTUBE_PROXY:
                     ydl_opts['proxy'] = YOUTUBE_PROXY
                 loop = asyncio.get_running_loop()
