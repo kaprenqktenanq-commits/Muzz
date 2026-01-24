@@ -117,7 +117,7 @@ async def song_download(client, message: Message):
         # Send the file
         await message.reply_audio(
             audio=filepath,
-            caption="ArmedMusic",
+            caption="@ArmedMusicBot",
             title=title,
             performer=uploader,
             duration=duration,
@@ -137,4 +137,3 @@ async def song_download(client, message: Message):
     except Exception as e:
         logger.error(f"Song download failed: {e}")
         await processing_msg.edit_text("❌ Failed to download the song.")
-        
