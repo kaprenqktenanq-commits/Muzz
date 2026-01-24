@@ -100,19 +100,34 @@ async def stream(
                 )
                 img = await get_thumb(vidid,user_id)
                 button = stream_markup(_, chat_id)
-                run = await app.send_photo(
-                    original_chat_id,
-                    photo=img,
-                    caption=_["stream_1"].format(
-                        f"https://t.me/{app.username}?start=info_{vidid}",
-                        title[:23],
-                        duration_min,
-                        user_name,
-                    ),
-                    reply_markup=InlineKeyboardMarkup(button),
-                )
-                db[chat_id][0]["mystic"] = run
-                db[chat_id][0]["markup"] = "stream"
+                try:
+                    run = await app.send_photo(
+                        chat_id,
+                        photo=img,
+                        caption=_["stream_1"].format(
+                            f"https://t.me/{app.username}?start=info_{vidid}",
+                            title[:23],
+                            duration_min,
+                            user_name,
+                        ),
+                        reply_markup=InlineKeyboardMarkup(button),
+                    )
+                    db[chat_id][0]["mystic"] = run
+                    db[chat_id][0]["markup"] = "stream"
+                except Exception as e:
+                    # If send_photo fails, send a text message instead
+                    run = await app.send_message(
+                        chat_id,
+                        text=_["stream_1"].format(
+                            f"https://t.me/{app.username}?start=info_{vidid}",
+                            title[:23],
+                            duration_min,
+                            user_name,
+                        ),
+                        reply_markup=InlineKeyboardMarkup(button),
+                    )
+                    db[chat_id][0]["mystic"] = run
+                    db[chat_id][0]["markup"] = "stream"
         if count == 0:
             return
         else:
@@ -186,19 +201,34 @@ async def stream(
             )
             img = await get_thumb(vidid,user_id)
             button = stream_markup(_, chat_id)
-            run = await app.send_photo(
-                
-                photo=img,
-                caption=_["stream_1"].format(
-                    f"https://t.me/{app.username}?start=info_{vidid}",
-                    title[:23],
-                    duration_min,
-                    user_name,
-                ),
-                reply_markup=InlineKeyboardMarkup(button),
-            )
-            db[chat_id][0]["mystic"] = run
-            db[chat_id][0]["markup"] = "stream"
+            try:
+                run = await app.send_photo(
+                    chat_id,
+                    photo=img,
+                    caption=_["stream_1"].format(
+                        f"https://t.me/{app.username}?start=info_{vidid}",
+                        title[:23],
+                        duration_min,
+                        user_name,
+                    ),
+                    reply_markup=InlineKeyboardMarkup(button),
+                )
+                db[chat_id][0]["mystic"] = run
+                db[chat_id][0]["markup"] = "stream"
+            except Exception as e:
+                # If send_photo fails, send a text message instead
+                run = await app.send_message(
+                    chat_id,
+                    text=_["stream_1"].format(
+                        f"https://t.me/{app.username}?start=info_{vidid}",
+                        title[:23],
+                        duration_min,
+                        user_name,
+                    ),
+                    reply_markup=InlineKeyboardMarkup(button),
+                )
+                db[chat_id][0]["mystic"] = run
+                db[chat_id][0]["markup"] = "stream"
     elif streamtype == "soundcloud":
         file_path = result["filepath"]
         title = result["title"]
@@ -239,15 +269,32 @@ async def stream(
                 forceplay=forceplay,
             )
             button = stream_markup(_, chat_id)
-            run = await app.send_photo(
-                original_chat_id,
-                photo=config.SOUNCLOUD_IMG_URL,
-                caption=_["stream_1"].format(
-                    config.SUPPORT_CHAT, title[:23], duration_min, user_name
-                ),
-                reply_markup=InlineKeyboardMarkup(button),
-            )
-            db[chat_id][0]["mystic"] = run
+            try:
+                run = await app.send_photo(
+                    chat_id,
+                    photo=config.SOUNCLOUD_IMG_URL,
+                    caption=_["stream_1"].format(
+                        f"https://t.me/{app.username}?start=info_{streamtype}",
+                        title[:23],
+                        duration_min,
+                        user_name,
+                    ),
+                    reply_markup=InlineKeyboardMarkup(button),
+                )
+                db[chat_id][0]["mystic"] = run
+            except Exception as e:
+                # If send_photo fails, send a text message instead
+                run = await app.send_message(
+                    chat_id,
+                    text=_["stream_1"].format(
+                        f"https://t.me/{app.username}?start=info_{streamtype}",
+                        title[:23],
+                        duration_min,
+                        user_name,
+                    ),
+                    reply_markup=InlineKeyboardMarkup(button),
+                )
+                db[chat_id][0]["mystic"] = run
             db[chat_id][0]["markup"] = "tg"
     elif streamtype == "telegram":
         file_path = result["path"]
@@ -293,13 +340,22 @@ async def stream(
             if video:
                 await add_active_video_chat(chat_id)
             button = stream_markup(_, chat_id)
-            run = await app.send_photo(
-                original_chat_id,
-                photo=config.TELEGRAM_VIDEO_URL if video else config.TELEGRAM_AUDIO_URL,
-                caption=_["stream_1"].format(link, title[:23], duration_min, user_name),
-                reply_markup=InlineKeyboardMarkup(button),
-            )
-            db[chat_id][0]["mystic"] = run
+            try:
+                run = await app.send_photo(
+                    chat_id,
+                    photo=config.TELEGRAM_VIDEO_URL if video else config.TELEGRAM_AUDIO_URL,
+                    caption=_["stream_1"].format(link, title[:23], duration_min, user_name),
+                    reply_markup=InlineKeyboardMarkup(button),
+                )
+                db[chat_id][0]["mystic"] = run
+            except Exception as e:
+                # If send_photo fails, send a text message instead
+                run = await app.send_message(
+                    chat_id,
+                    text=_["stream_1"].format(link, title[:23], duration_min, user_name),
+                    reply_markup=InlineKeyboardMarkup(button),
+                )
+                db[chat_id][0]["mystic"] = run
             db[chat_id][0]["markup"] = "tg"
     elif streamtype == "live":
         link = result["link"]
@@ -354,18 +410,32 @@ async def stream(
             )
             img = await get_thumb(vidid,user_id)
             button = stream_markup(_, chat_id)
-            run = await app.send_photo(
-                original_chat_id,
-                photo=img,
-                caption=_["stream_1"].format(
-                    f"https://t.me/{app.username}?start=info_{vidid}",
-                    title[:23],
-                    duration_min,
-                    user_name,
-                ),
-                reply_markup=InlineKeyboardMarkup(button),
-            )
-            db[chat_id][0]["mystic"] = run
+            try:
+                run = await app.send_photo(
+                    chat_id,
+                    photo=img,
+                    caption=_["stream_1"].format(
+                        f"https://t.me/{app.username}?start=info_{vidid}",
+                        title[:23],
+                        duration_min,
+                        user_name,
+                    ),
+                    reply_markup=InlineKeyboardMarkup(button),
+                )
+                db[chat_id][0]["mystic"] = run
+            except Exception as e:
+                # If send_photo fails, send a text message instead
+                run = await app.send_message(
+                    chat_id,
+                    text=_["stream_1"].format(
+                        f"https://t.me/{app.username}?start=info_{vidid}",
+                        title[:23],
+                        duration_min,
+                        user_name,
+                    ),
+                    reply_markup=InlineKeyboardMarkup(button),
+                )
+                db[chat_id][0]["mystic"] = run
             db[chat_id][0]["markup"] = "tg"
     elif streamtype == "index":
         link = result
@@ -409,12 +479,21 @@ async def stream(
                 forceplay=forceplay,
             )
             button = stream_markup(_, chat_id)
-            run = await app.send_photo(
-                original_chat_id,
-                photo=config.STREAM_IMG_URL,
-                caption=_["stream_2"].format(user_name),
-                reply_markup=InlineKeyboardMarkup(button),
-            )
-            db[chat_id][0]["mystic"] = run
+            try:
+                run = await app.send_photo(
+                    chat_id,
+                    photo=config.STREAM_IMG_URL,
+                    caption=_["stream_2"].format(user_name),
+                    reply_markup=InlineKeyboardMarkup(button),
+                )
+                db[chat_id][0]["mystic"] = run
+            except Exception as e:
+                # If send_photo fails, send a text message instead
+                run = await app.send_message(
+                    chat_id,
+                    text=_["stream_2"].format(user_name),
+                    reply_markup=InlineKeyboardMarkup(button),
+                )
+                db[chat_id][0]["mystic"] = run
             db[chat_id][0]["markup"] = "tg"
             await mystic.delete()
