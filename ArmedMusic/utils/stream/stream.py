@@ -19,7 +19,7 @@ async def stream(_, mystic, user_id, result, chat_id, user_name, original_chat_i
     if forceplay:
         await Anony.force_stop_stream(chat_id)
     if streamtype == 'playlist':
-        msg = f'{_['play_19']}\n\n'
+        msg = f"{_['play_19']}\n\n"
         count = 0
         for search in result:
             if int(count) == config.PLAYLIST_FETCH_LIMIT:
