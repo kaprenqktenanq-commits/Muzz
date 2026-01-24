@@ -608,6 +608,92 @@ class YouTubeAPI:
                         'fragment_retries': 3,
                         'skip_unavailable_fragments': True,
                     },
+                    # Configuration 6: TVHTML5 client with minimal extraction
+                    {
+                        'format': 'bestaudio[ext=m4a]/bestaudio[acodec=mp4a]/140/bestaudio/best[ext=mp4]/best',
+                        'outtmpl': os.path.join("downloads", f"{vid_id}"),
+                        'postprocessors': [{
+                            'key': 'FFmpegExtractAudio',
+                            'preferredcodec': 'mp3',
+                            'preferredquality': '192',
+                        }],
+                        'quiet': True,
+                        'no_warnings': True,
+                        'retries': 5,
+                        'fragment_retries': 5,
+                        'skip_unavailable_fragments': True,
+                        'http_headers': {
+                            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                            'Accept-Language': 'en-us,en;q=0.5',
+                        },
+                        'extractor_args': {
+                            'youtube': {
+                                'player_client': ['tvhtml5'],
+                                'player_skip': ['js'],
+                                'innertube_client': 'tvhtml5',
+                            }
+                        },
+                    },
+                    # Configuration 7: Android Music client
+                    {
+                        'format': 'bestaudio[ext=m4a]/bestaudio[acodec=mp4a]/140/bestaudio/best[ext=mp4]/best',
+                        'outtmpl': os.path.join("downloads", f"{vid_id}"),
+                        'postprocessors': [{
+                            'key': 'FFmpegExtractAudio',
+                            'preferredcodec': 'mp3',
+                            'preferredquality': '192',
+                        }],
+                        'quiet': True,
+                        'no_warnings': True,
+                        'retries': 5,
+                        'fragment_retries': 5,
+                        'skip_unavailable_fragments': True,
+                        'http_headers': {
+                            'User-Agent': 'com.google.android.music/24102161 (Linux; U; Android 14; en_US; sdk_gphone64_arm64; Build/UPB4.230623.005; Cronet)',
+                            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                            'Accept-Language': 'en-us,en;q=0.5',
+                        },
+                        'extractor_args': {
+                            'youtube': {
+                                'player_client': ['android_music'],
+                                'player_skip': ['js'],
+                                'innertube_client': 'android_music',
+                            }
+                        },
+                    },
+                    # Configuration 8: Web with embedded client
+                    {
+                        'format': 'bestaudio[ext=m4a]/bestaudio[acodec=mp4a]/140/bestaudio/best[ext=mp4]/best',
+                        'outtmpl': os.path.join("downloads", f"{vid_id}"),
+                        'postprocessors': [{
+                            'key': 'FFmpegExtractAudio',
+                            'preferredcodec': 'mp3',
+                            'preferredquality': '192',
+                        }],
+                        'quiet': True,
+                        'no_warnings': True,
+                        'retries': 5,
+                        'fragment_retries': 5,
+                        'skip_unavailable_fragments': True,
+                        'http_headers': {
+                            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                            'Accept-Language': 'en-us,en;q=0.5',
+                            'Sec-Fetch-Mode': 'navigate',
+                            'Sec-Fetch-Dest': 'document',
+                            'Sec-Fetch-Site': 'none',
+                            'Sec-Fetch-User': '?1',
+                            'Upgrade-Insecure-Requests': '1',
+                        },
+                        'extractor_args': {
+                            'youtube': {
+                                'player_client': ['web_embedded'],
+                                'player_skip': ['js'],
+                                'innertube_client': 'web_embedded',
+                            }
+                        },
+                    },
                 ]
                 
                 # Try each configuration
