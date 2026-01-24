@@ -2,6 +2,7 @@ import asyncio
 import importlib
 
 from pyrogram import idle
+from pyrogram.errors import FloodWait
 from pytgcalls.exceptions import NoActiveGroupCall
 
 import config
@@ -32,11 +33,21 @@ async def init():
             BANNED_USERS.add(user_id)
     except:
         pass
-    await app.start()
+    try:
+        await app.start()
+    except FloodWait as e:
+        LOGGER(__name__).info(f"FloodWait detected: waiting {e.value} seconds before retrying...")
+        await asyncio.sleep(e.value)
+        await app.start()
     for all_module in ALL_MODULES:
         importlib.import_module("AnonXMusic.plugins" + all_module)
     LOGGER("AnonXMusic.plugins").info("Successfully Imported Modules...")
-    await userbot.start()
+    try:
+        await userbot.start()
+    except FloodWait as e:
+        LOGGER(__name__).info(f"FloodWait detected for userbot: waiting {e.value} seconds before retrying...")
+        await asyncio.sleep(e.value)
+        await userbot.start()
     await Anony.start()
     try:
         await Anony.stream_call("https://te.legra.ph/file/29f784eb49d230ab62e9e.mp4")
