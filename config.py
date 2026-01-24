@@ -90,6 +90,8 @@ SPOTIFY_ARTIST_IMG_URL = "https://graph.org/file/0bb6f36796d496b4254ff.jpg"
 SPOTIFY_ALBUM_IMG_URL = "https://graph.org/file/0bb6f36796d496b4254ff.jpg"
 SPOTIFY_PLAYLIST_IMG_URL = "https://graph.org/file/0bb6f36796d496b4254ff.jpg"
 
+DEFAULT_THUMB = START_IMG_URL[0]  # Default thumbnail for streams
+
 
 
 def time_to_seconds(time):
