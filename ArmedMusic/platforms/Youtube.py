@@ -518,10 +518,11 @@ class YouTubeAPI:
                         'extractor_args': {'youtube': {'player_client': ['web_safari'], 'player_skip': ['js'], 'innertube_client': 'web_safari'}}
                     }
                 ]
-                for i, ydl_opts in enumerate(ydl_opts_list):
+                for i in range(len(ydl_opts_list)):
                     try:
                         logger.info(f'Trying download configuration {i + 1} for {vid_id}')
-                        if cookie_file and 'cookiefile' not in ydl_opts:
+                        ydl_opts = ydl_opts_list[i].copy()
+                        if cookie_file and i < 4:  # Try first 4 configs with cookies
                             ydl_opts['cookiefile'] = cookie_file
                         if YOUTUBE_PROXY and 'proxy' not in ydl_opts:
                             ydl_opts['proxy'] = YOUTUBE_PROXY

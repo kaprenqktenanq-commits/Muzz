@@ -46,6 +46,8 @@ async def stream(_, mystic, user_id, result, chat_id, user_name, original_chat_i
                     file_path, direct = await YouTube.download(vidid, mystic, video=status, videoid=True)
                 except:
                     raise AssistantErr(_['play_14'])
+                if file_path is None:
+                    raise AssistantErr(_['play_14'])
                 await Anony.join_call(chat_id, original_chat_id, file_path, video=status, image=thumbnail)
                 await put_queue(chat_id, original_chat_id, file_path if direct else f'vid_{vidid}', title, duration_min, user_name, vidid, user_id, 'video' if video else 'audio', forceplay=forceplay)
                 img = await get_thumb(vidid, user_id)
@@ -80,6 +82,8 @@ async def stream(_, mystic, user_id, result, chat_id, user_name, original_chat_i
         try:
             file_path, direct = await YouTube.download(vidid, mystic, videoid=True, video=status)
         except:
+            raise AssistantErr(_['play_14'])
+        if file_path is None:
             raise AssistantErr(_['play_14'])
         if await is_active_chat(chat_id):
             await put_queue(chat_id, original_chat_id, file_path if direct else f'vid_{vidid}', title, duration_min, user_name, vidid, user_id, 'video' if video else 'audio')
