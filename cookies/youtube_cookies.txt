@@ -38,9 +38,9 @@ www.youtube.com	FALSE	/	FALSE	1774794752	ysm-pro-1	2
 .youtube.com	TRUE	/	TRUE	1797965539	__Secure-3PSIDCC	AKEyXzVgoXSVSFrG_4rBUQfZFBe6E-DM-KA-iExCQ5eRABwpy_ihGA6dpA8aQoRI2Fb0HcRhHgI
 .youtube.com	TRUE	/	TRUE	0	OTZ	1784831457_1784746602_1797965550
 .youtube.com	TRUE	/	TRUE	1803839460	YSC	TJoE36esyJY
-.music.youtube.com	FALSE	/	FALSE	1797965539	namejan_2022_update_limit	1
-.music.youtube.com	FALSE	/	FALSE	1797965550	namejan_2022_update	1
-.music.youtube.com	FALSE	/	FALSE	1798554743	nameny26	1
+.music.youtube.com	TRUE	/	FALSE	1797965539	namejan_2022_update_limit	1
+.music.youtube.com	TRUE	/	FALSE	1797965550	namejan_2022_update	1
+.music.youtube.com	TRUE	/	FALSE	1798554743	nameny26	1
 .music.youtube.com	TRUE	/	TRUE	1803839460	PREF	f4=4000000&tz=Asia.Yerevan&f7=100&f5=20000&hl=ru
 .music.youtube.com	TRUE	/	FALSE	1803839457	HSID	Ad9BK1X7tdCCI-vMF
 .music.youtube.com	TRUE	/	TRUE	1803839457	SSID	AmzHw5htJzhLhVaF8
