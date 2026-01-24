@@ -1,12 +1,9 @@
 from pyrogram import filters
 from pyrogram.types import Message
-
 from ArmedMusic import app
 from ArmedMusic.core.call import Anony
-
 welcome = 20
 close = 30
-
 
 @app.on_message(filters.video_chat_started, group=welcome)
 @app.on_message(filters.video_chat_ended, group=close)

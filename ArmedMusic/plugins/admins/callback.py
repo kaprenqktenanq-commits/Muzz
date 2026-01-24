@@ -37,7 +37,6 @@ from strings import get_string
 checker = {}
 upvoters = {}
 
-
 @app.on_callback_query(filters.regex("ADMIN") & ~BANNED_USERS)
 @languageCB
 async def del_back_playlist(client, CallbackQuery:CallbackQuery, _):
@@ -314,7 +313,7 @@ async def del_back_playlist(client, CallbackQuery:CallbackQuery, _):
                     if str(streamtype) == "audio"
                     else TELEGRAM_VIDEO_URL,
                     caption=_["stream_1"].format(
-                        title, duration, user, "#"
+                        title, duration, user, "
                     ),
                     reply_markup=InlineKeyboardMarkup(button),
                 )
@@ -327,7 +326,7 @@ async def del_back_playlist(client, CallbackQuery:CallbackQuery, _):
                     if str(streamtype) == "audio"
                     else TELEGRAM_VIDEO_URL,
                     caption=_["stream_1"].format(
-                        title, duration, user, "#"
+                        title, duration, user, "
                     ),
                     reply_markup=InlineKeyboardMarkup(button),
                 )
@@ -349,7 +348,6 @@ async def del_back_playlist(client, CallbackQuery:CallbackQuery, _):
                 db[chat_id][0]["mystic"] = run
                 db[chat_id][0]["markup"] = "stream"
             await CallbackQuery.edit_message_text(txt, reply_markup=close_markup(_))
-
 
 async def markup_timer():
     while not await asyncio.sleep(7):
@@ -393,6 +391,5 @@ async def markup_timer():
                     continue
             except:
                 continue
-
 
 asyncio.create_task(markup_timer())

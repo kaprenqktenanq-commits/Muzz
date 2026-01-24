@@ -41,12 +41,10 @@ from ArmedMusic.platforms.Youtube import cookie_txt_file
 autoend = {}
 counter = {}
 
-
 async def _clear_(chat_id):
     db[chat_id] = []
     await remove_active_video_chat(chat_id)
     await remove_active_chat(chat_id)
-
 
 class Call(PyTgCalls):
     def __init__(self):
@@ -298,18 +296,14 @@ class Call(PyTgCalls):
                 link,
                 audio_parameters=AudioQuality.HIGH,video_parameters=VideoQuality.SD_480p
                 )
-            # stream = AudioVideoPiped(
-            #     link,
-            #     audio_parameters=HighQualityAudio(),
-            #     video_parameters=MediumQualityVideo(),
-            # )
+
         else:
             stream = (
                 MediaStream(
                     link,
                     audio_parameters=AudioQuality.HIGH,
                     video_parameters=VideoQuality.SD_480p,
-                    
+
                 )
                 if video
                 else MediaStream(link, audio_parameters=AudioQuality.HIGH,video_flags=MediaStream.Flags.IGNORE)
@@ -319,11 +313,7 @@ class Call(PyTgCalls):
                 chat_id,
                 stream
             )
-            # await assistant.join_group_call(
-            #     chat_id,
-            #     stream,
-            #     stream_type=StreamType().pulse_stream,
-            # )
+
         except NoActiveGroupCall:
             raise AssistantErr(_["call_8"])
         except AlreadyJoinedError:
@@ -523,7 +513,7 @@ class Call(PyTgCalls):
                         if str(streamtype) == "audio"
                         else config.TELEGRAM_VIDEO_URL,
                         caption=_["stream_1"].format(
-                            "#", title, check[0]["dur"], user
+                            "
                         ),
                         reply_markup=InlineKeyboardMarkup(button),
                     )
@@ -535,7 +525,7 @@ class Call(PyTgCalls):
                         chat_id=original_chat_id,
                         photo=config.SOUNCLOUD_IMG_URL,
                         caption=_["stream_1"].format(
-                            "#", title, check[0]["dur"], user
+                            "
                         ),
                         reply_markup=InlineKeyboardMarkup(button),
                     )
@@ -588,32 +578,32 @@ class Call(PyTgCalls):
     async def decorators(self):
         @self.one.on_update(
                 fl.chat_update(
-                    ChatUpdate.Status.KICKED | 
-                    ChatUpdate.Status.LEFT_GROUP | 
+                    ChatUpdate.Status.KICKED |
+                    ChatUpdate.Status.LEFT_GROUP |
                     ChatUpdate.Status.CLOSED_VOICE_CHAT
                     ))
         @self.two.on_update(
                 fl.chat_update(
-                    ChatUpdate.Status.KICKED | 
-                    ChatUpdate.Status.LEFT_GROUP | 
+                    ChatUpdate.Status.KICKED |
+                    ChatUpdate.Status.LEFT_GROUP |
                     ChatUpdate.Status.CLOSED_VOICE_CHAT
                     ))
         @self.three.on_update(
                 fl.chat_update(
-                    ChatUpdate.Status.KICKED | 
-                    ChatUpdate.Status.LEFT_GROUP | 
+                    ChatUpdate.Status.KICKED |
+                    ChatUpdate.Status.LEFT_GROUP |
                     ChatUpdate.Status.CLOSED_VOICE_CHAT
                     ))
         @self.four.on_update(
                 fl.chat_update(
-                    ChatUpdate.Status.KICKED | 
-                    ChatUpdate.Status.LEFT_GROUP | 
+                    ChatUpdate.Status.KICKED |
+                    ChatUpdate.Status.LEFT_GROUP |
                     ChatUpdate.Status.CLOSED_VOICE_CHAT
                     ))
         @self.five.on_update(
                 fl.chat_update(
-                    ChatUpdate.Status.KICKED | 
-                    ChatUpdate.Status.LEFT_GROUP | 
+                    ChatUpdate.Status.KICKED |
+                    ChatUpdate.Status.LEFT_GROUP |
                     ChatUpdate.Status.CLOSED_VOICE_CHAT
                     ))
         async def stream_services_handler(client, update: Update):
@@ -626,6 +616,5 @@ class Call(PyTgCalls):
         @self.five.on_update(fl.stream_end())
         async def stream_end_handler1(client:PyTgCalls, update: StreamEnded):
             await self.change_stream(client, update.chat_id)
-
 
 Anony = Call()

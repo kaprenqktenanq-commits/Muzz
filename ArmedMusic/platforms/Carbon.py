@@ -4,10 +4,8 @@ from os.path import realpath
 import aiohttp
 from aiohttp import client_exceptions
 
-
 class UnableToFetchCarbon(Exception):
     pass
-
 
 themes = [
     "3024-night",
@@ -42,30 +40,29 @@ themes = [
 ]
 
 colour = [
-    "#FF0000",
-    "#FF5733",
-    "#FFFF00",
-    "#008000",
-    "#0000FF",
-    "#800080",
-    "#A52A2A",
-    "#FF00FF",
-    "#D2B48C",
-    "#00FFFF",
-    "#808000",
-    "#800000",
-    "#00FFFF",
-    "#30D5C8",
-    "#00FF00",
-    "#008080",
-    "#4B0082",
-    "#EE82EE",
-    "#FFC0CB",
-    "#000000",
-    "#FFFFFF",
-    "#808080",
+    "
+    "
+    "
+    "
+    "
+    "
+    "
+    "
+    "
+    "
+    "
+    "
+    "
+    "
+    "
+    "
+    "
+    "
+    "
+    "
+    "
+    "
 ]
-
 
 class CarbonAPI:
     def __init__(self):

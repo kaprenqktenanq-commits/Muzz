@@ -1,8 +1,6 @@
 import asyncio
-
 from ArmedMusic.misc import db
 from ArmedMusic.utils.database import get_active_chats, is_music_playing
-
 
 async def timer():
     while not await asyncio.sleep(1):
@@ -13,12 +11,10 @@ async def timer():
             playing = db.get(chat_id)
             if not playing:
                 continue
-            duration = int(playing[0]["seconds"])
+            duration = int(playing[0]['seconds'])
             if duration == 0:
                 continue
-            if db[chat_id][0]["played"] >= duration:
+            if db[chat_id][0]['played'] >= duration:
                 continue
-            db[chat_id][0]["played"] += 1
-
-
+            db[chat_id][0]['played'] += 1
 asyncio.create_task(timer())
