@@ -470,7 +470,7 @@ class YouTubeAPI:
                 cookie_file = cookie_txt_file()
                 
                 ydl_opts = {
-                    'format': 'bestaudio[ext=m4a]/bestaudio[acodec=mp4a]/140/bestaudio',
+                    'format': 'bestaudio[ext=m4a]/bestaudio[acodec=mp4a]/140/bestaudio/best[ext=mp4]/best',
                     'outtmpl': os.path.join("downloads", f"{vid_id}"),
                     'postprocessors': [{
                         'key': 'FFmpegExtractAudio',
@@ -645,7 +645,7 @@ class YouTubeAPI:
                 cookie_file = cookie_txt_file()
                 
                 ydl_opts = {
-                    'format': 'bestaudio[ext=m4a]/bestaudio[acodec=mp4a]/140/bestaudio',
+                    'format': 'bestaudio[ext=m4a]/bestaudio[acodec=mp4a]/140/bestaudio/best[ext=mp4]/best',
                     'outtmpl': f"downloads/{title}",
                     'postprocessors': [{
                         'key': 'FFmpegExtractAudio',
