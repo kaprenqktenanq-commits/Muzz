@@ -43,7 +43,7 @@ from config import BANNED_USERS, OWNER_ID
 async def settings_mar(client, message: Message):
     from AnonXMusic.utils.database import get_lang
     lang = await get_lang(message.chat.id)
-    from AnonXMusic.utils.lang import get_string
+    from strings import get_string
     _ = get_string(lang)
     buttons = setting_markup(_)
     await message.reply_text(
