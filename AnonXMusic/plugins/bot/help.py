@@ -49,22 +49,6 @@ async def fetch_image_models():
         print(f"Error fetching image models: {e}")
         return []
 
-
-async def fetch_ai_models():
-    """Fetch AI models from the API"""
-    if not YTPROXY_URL:
-        return []
-    try:
-        async with aiohttp.ClientSession() as session:
-            async with session.get(f"{YTPROXY_URL}/ai/models") as response:
-                if response.status == 200:
-                    data = await response.json()
-                    return data.get("models", [])
-                return []
-    except Exception as e:
-        print(f"Error fetching AI models: {e}")
-        return []
-
 @app.on_message(filters.command(["help"]) & filters.private & ~BANNED_USERS)
 @app.on_callback_query(filters.regex("settings_back_helper") & ~BANNED_USERS)
 async def helper_private(
@@ -146,12 +130,6 @@ async def helper_cb(client, CallbackQuery:CallbackQuery, _):
         btn = [
             [
                 InlineKeyboardButton(
-                    text="Ai Model Setting",
-                    callback_data="help_callback hb19",
-                )
-            ],
-            [
-                InlineKeyboardButton(
                     text="TTS Model Setting",
                     callback_data="help_callback hb17",
                 )
@@ -170,7 +148,7 @@ async def helper_cb(client, CallbackQuery:CallbackQuery, _):
             ]
         ]
         docs_link = f"{YTPROXY_URL}/docs" if YTPROXY_URL else "https://github.com/sqenaah/Muzza"
-        await CallbackQuery.edit_message_text(f"AI, TTS and Image Model Settings \n\n[Check Docs here]({docs_link})", reply_markup=InlineKeyboardMarkup(btn),parse_mode=ParseMode.DEFAULT)
+        await CallbackQuery.edit_message_text(f"TTS and Image Model Settings \n\n[Check Docs here]({docs_link})", reply_markup=InlineKeyboardMarkup(btn),parse_mode=ParseMode.DEFAULT)
     elif cb == "hb17":
         model_settings = await get_model_settings()
         current_tts = model_settings.get("tts", "athena")
@@ -286,62 +264,6 @@ async def helper_cb(client, CallbackQuery:CallbackQuery, _):
             )
         except MessageNotModified:
             pass
-    elif cb == "hb19":
-        model_settings = await get_model_settings()
-        current_ai = model_settings.get("ai", "GPT4")
-        
-        # Fetch AI models
-        models = await fetch_ai_models()
-        
-        if not models:
-            try:
-                await CallbackQuery.edit_message_text(
-                    "❌ Unable to fetch AI models. Please try again later.",
-                    reply_markup=InlineKeyboardMarkup([[
-                        InlineKeyboardButton(
-                            text=_["BACK_BUTTON"],
-                            callback_data="help_callback hb16"
-                        )
-                    ]]),
-                    parse_mode=ParseMode.DEFAULT
-                )
-            except MessageNotModified:
-                pass
-            return
-        
-        # Create buttons for each model
-        buttons = []
-        for model in models:
-            if model == current_ai:
-                button_text = f"✅ {model}"
-            else:
-                button_text = f"{model}"
-            
-            buttons.append([
-                InlineKeyboardButton(
-                    text=button_text,
-                    callback_data=f"ai_model_{model}"
-                )
-            ])
-        
-        # Add back button
-        buttons.append([
-            InlineKeyboardButton(
-                text=_["BACK_BUTTON"],
-                callback_data="help_callback hb16"
-            )
-        ])
-        
-        try:
-            await CallbackQuery.edit_message_text(
-                "🤖 **AI Model Settings**\n\nSelect an AI model:",
-                reply_markup=InlineKeyboardMarkup(buttons),
-                parse_mode=ParseMode.DEFAULT
-            )
-        except MessageNotModified:
-            pass
-
-
 @app.on_callback_query(filters.regex(r"tts_model_") & ~BANNED_USERS)
 @languageCB
 async def tts_model_callback(client, CallbackQuery:CallbackQuery, _):
@@ -513,82 +435,4 @@ async def image_model_callback(client, CallbackQuery: CallbackQuery, _):
             pass
 
 
-@app.on_callback_query(filters.regex(r"ai_model_") & ~BANNED_USERS)
-@languageCB
-async def ai_model_callback(client, CallbackQuery: CallbackQuery, _):
-    """Handle AI model selection"""
-    try:
-        await CallbackQuery.answer()
-    except:
-        pass
-    
-    # Extract model name from callback data
-    callback_data = CallbackQuery.data
-    model_name = callback_data.replace("ai_model_", "")
-    
-    success = await update_model_settings({"ai": model_name})
-    
-    if success:
-        model_settings = await get_model_settings()
-        current_ai = model_settings.get("ai", "GPT4")
-        
-        models = await fetch_ai_models()
-        
-        if models:
-            buttons = []
-            for model in models:
-                if model == current_ai:
-                    button_text = f"✅ {model}"
-                else:
-                    button_text = f"{model}"
-                
-                buttons.append([
-                    InlineKeyboardButton(
-                        text=button_text,
-                        callback_data=f"ai_model_{model}"
-                    )
-                ])
-            
-            buttons.append([
-                InlineKeyboardButton(
-                    text=_["BACK_BUTTON"],
-                    callback_data="help_callback hb16"
-                )
-            ])
-            
-            try:
-                await CallbackQuery.edit_message_text(
-                    f"✅ **AI Model Updated!**\n\nCurrent model: **{model_name}**",
-                    reply_markup=InlineKeyboardMarkup(buttons),
-                    parse_mode=ParseMode.DEFAULT
-                )
-            except MessageNotModified:
-                pass
-        else:
-            try:
-                await CallbackQuery.edit_message_text(
-                    "❌ Unable to fetch AI models. Please try again later.",
-                    reply_markup=InlineKeyboardMarkup([[
-                        InlineKeyboardButton(
-                            text=_["BACK_BUTTON"],
-                            callback_data="help_callback hb16"
-                        )
-                    ]]),
-                    parse_mode=ParseMode.DEFAULT
-                )
-            except MessageNotModified:
-                pass
-    else:
-        try:
-            await CallbackQuery.edit_message_text(
-                "❌ Failed to update AI model. Please try again.",
-                reply_markup=InlineKeyboardMarkup([[
-                    InlineKeyboardButton(
-                        text=_["BACK_BUTTON"],
-                        callback_data="help_callback hb16"
-                    )
-                ]]),
-                parse_mode=ParseMode.DEFAULT
-            )
-        except MessageNotModified:
-            pass
+
