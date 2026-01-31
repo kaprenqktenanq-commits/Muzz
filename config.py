@@ -11,7 +11,8 @@ API_HASH = getenv("API_HASH", "f745cdd5ddb46cf841d6990048f52935")
 
 BOT_TOKEN = getenv("BOT_TOKEN", "8568049660:AAHZl3Wg5b-MTXBjhQbsn9MrP9cCKbWjgDs")
 
-MONGO_DB_URI = "mongodb://mongo:nyOpJHIPMxBuKmtOPUpycNIrdrhJCnoH@mongodb.railway.internal:27017"
+MONGO_DB_URI = "mongodb://mongo:mkMgrOSKhPDCaZVjSGlSWbolcENfIdeD@mongodb.railway.internal:27017"
+
 YTPROXY_URL = getenv("YTPROXY_URL", None)
 YOUTUBE_PROXY = getenv("YOUTUBE_PROXY", None)
 YT_API_KEY = getenv("YT_API_KEY" , "AIzaSyAyFW-9snpxGwFa5cu-p81jjE8Fg1h_6rk" )
