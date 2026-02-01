@@ -204,18 +204,35 @@ class YouTubeAPI:
         elif '&si=' in link:
             link = link.split('&si=')[0]
         cookie = cookie_txt_file() if YOUTUBE_USE_COOKIES else None
-        if cookie:
-            cmd = ['yt-dlp', '--cookies', cookie, '-g', '-f', 'best[height<=?720][width<=?1280]', f'{link}']
-        else:
-            cmd = ['yt-dlp', '-g', '-f', 'best[height<=?720][width<=?1280]', f'{link}']
-        if YOUTUBE_PROXY:
-            cmd.extend(['--proxy', YOUTUBE_PROXY])
-        proc = await asyncio.create_subprocess_exec(*cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
-        stdout, stderr = await proc.communicate()
-        if stdout:
-            return (1, stdout.decode().split('\n')[0])
-        else:
-            return (0, stderr.decode())
+        
+        # Try multiple format options as fallbacks
+        format_options = [
+            'best[height<=?720][width<=?1280]',
+            'best[height<=?480][width<=?854]', 
+            'best[height<=?360][width<=?640]',
+            '18',  # Explicitly try format 18
+            'best'
+        ]
+        
+        for fmt in format_options:
+            try:
+                if cookie:
+                    cmd = ['yt-dlp', '--cookies', cookie, '-g', '-f', fmt, f'{link}']
+                else:
+                    cmd = ['yt-dlp', '-g', '-f', fmt, f'{link}']
+                if YOUTUBE_PROXY:
+                    cmd.extend(['--proxy', YOUTUBE_PROXY])
+                proc = await asyncio.create_subprocess_exec(*cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
+                stdout, stderr = await proc.communicate()
+                if stdout:
+                    url = stdout.decode().split('\n')[0]
+                    if url:
+                        return (1, url)
+            except Exception as fmt_e:
+                logger.warning(f'Format {fmt} failed for video URL: {str(fmt_e)}')
+                continue
+        
+        return (0, "All format options failed")
 
     async def playlist(self, link, limit, user_id, videoid: Union[bool, str]=None):
         if videoid:
@@ -667,17 +684,61 @@ class YouTubeAPI:
                 os.makedirs(os.path.dirname(filepath), exist_ok=True)
                 if os.path.exists(filepath):
                     return filepath
-                ydl_opts = {'format': 'best[height<=720]/best', 'outtmpl': filepath, 'quiet': True, 'no_warnings': True, 'retries': 10, 'fragment_retries': 10, 'skip_unavailable_fragments': True, 'http_headers': {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36', 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8', 'Accept-Language': 'en-us,en;q=0.5', 'Sec-Fetch-Mode': 'navigate', 'Sec-Fetch-Dest': 'document', 'Sec-Fetch-Site': 'none', 'Sec-Fetch-User': '?1', 'Upgrade-Insecure-Requests': '1'}, 'extractor_args': {'youtube': {'player_client': ['web'], 'player_skip': ['js'], 'innertube_client': 'web'}}}
-                if YOUTUBE_PROXY:
-                    ydl_opts['proxy'] = YOUTUBE_PROXY
-                loop = asyncio.get_running_loop()
-                with ThreadPoolExecutor() as executor:
-                    await loop.run_in_executor(executor, lambda: yt_dlp.YoutubeDL(ydl_opts).download([f'https://www.youtube.com/watch?v={vid_id}']))
-                if os.path.exists(filepath):
-                    return filepath
-                else:
-                    logger.error('Video download failed, file not found')
-                    return None
+                
+                # Try multiple format options as fallbacks
+                format_options = [
+                    'best[height<=720]/best',
+                    'best[height<=480]/best', 
+                    'best[height<=360]/best',
+                    '18/best',  # Explicitly include format 18
+                    'best'
+                ]
+                
+                for fmt in format_options:
+                    try:
+                        ydl_opts = {
+                            'format': fmt, 
+                            'outtmpl': filepath, 
+                            'quiet': True, 
+                            'no_warnings': True, 
+                            'retries': 10, 
+                            'fragment_retries': 10, 
+                            'skip_unavailable_fragments': True, 
+                            'http_headers': {
+                                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36', 
+                                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8', 
+                                'Accept-Language': 'en-us,en;q=0.5', 
+                                'Sec-Fetch-Mode': 'navigate', 
+                                'Sec-Fetch-Dest': 'document', 
+                                'Sec-Fetch-Site': 'none', 
+                                'Sec-Fetch-User': '?1', 
+                                'Upgrade-Insecure-Requests': '1'
+                            }, 
+                            'extractor_args': {
+                                'youtube': {
+                                    'player_client': ['web'], 
+                                    'player_skip': ['js'], 
+                                    'innertube_client': 'web'
+                                }
+                            }
+                        }
+                        if YOUTUBE_PROXY:
+                            ydl_opts['proxy'] = YOUTUBE_PROXY
+                        loop = asyncio.get_running_loop()
+                        with ThreadPoolExecutor() as executor:
+                            await loop.run_in_executor(executor, lambda: yt_dlp.YoutubeDL(ydl_opts).download([f'https://www.youtube.com/watch?v={vid_id}']))
+                        if os.path.exists(filepath):
+                            logger.info(f'Video download succeeded with format: {fmt}')
+                            return filepath
+                    except Exception as fmt_e:
+                        logger.warning(f'Format {fmt} failed for {vid_id}: {str(fmt_e)}')
+                        # Remove partial file if it exists
+                        if os.path.exists(filepath):
+                            os.remove(filepath)
+                        continue
+                
+                logger.error('All video format options failed')
+                return None
             except Exception as e:
                 logger.error(f'yt_dlp video download failed for {vid_id}: {str(e)}')
                 return None
@@ -688,17 +749,61 @@ class YouTubeAPI:
                 os.makedirs(os.path.dirname(filepath), exist_ok=True)
                 if os.path.exists(filepath):
                     return filepath
-                ydl_opts = {'format': 'best[height<=720]/best', 'outtmpl': filepath, 'quiet': True, 'no_warnings': True, 'retries': 10, 'fragment_retries': 10, 'skip_unavailable_fragments': True, 'http_headers': {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36', 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8', 'Accept-Language': 'en-us,en;q=0.5', 'Sec-Fetch-Mode': 'navigate', 'Sec-Fetch-Dest': 'document', 'Sec-Fetch-Site': 'none', 'Sec-Fetch-User': '?1', 'Upgrade-Insecure-Requests': '1'}, 'extractor_args': {'youtube': {'player_client': ['web'], 'player_skip': ['js'], 'innertube_client': 'web'}}}
-                if YOUTUBE_PROXY:
-                    ydl_opts['proxy'] = YOUTUBE_PROXY
-                loop = asyncio.get_running_loop()
-                with ThreadPoolExecutor() as executor:
-                    await loop.run_in_executor(executor, lambda: yt_dlp.YoutubeDL(ydl_opts).download([f'https://www.youtube.com/watch?v={vid_id}']))
-                if os.path.exists(filepath):
-                    return filepath
-                else:
-                    logger.error('Song video download failed, file not found')
-                    return None
+                
+                # Try multiple format options as fallbacks
+                format_options = [
+                    'best[height<=720]/best',
+                    'best[height<=480]/best', 
+                    'best[height<=360]/best',
+                    '18/best',  # Explicitly include format 18
+                    'best'
+                ]
+                
+                for fmt in format_options:
+                    try:
+                        ydl_opts = {
+                            'format': fmt, 
+                            'outtmpl': filepath, 
+                            'quiet': True, 
+                            'no_warnings': True, 
+                            'retries': 10, 
+                            'fragment_retries': 10, 
+                            'skip_unavailable_fragments': True, 
+                            'http_headers': {
+                                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36', 
+                                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8', 
+                                'Accept-Language': 'en-us,en;q=0.5', 
+                                'Sec-Fetch-Mode': 'navigate', 
+                                'Sec-Fetch-Dest': 'document', 
+                                'Sec-Fetch-Site': 'none', 
+                                'Sec-Fetch-User': '?1', 
+                                'Upgrade-Insecure-Requests': '1'
+                            }, 
+                            'extractor_args': {
+                                'youtube': {
+                                    'player_client': ['web'], 
+                                    'player_skip': ['js'], 
+                                    'innertube_client': 'web'
+                                }
+                            }
+                        }
+                        if YOUTUBE_PROXY:
+                            ydl_opts['proxy'] = YOUTUBE_PROXY
+                        loop = asyncio.get_running_loop()
+                        with ThreadPoolExecutor() as executor:
+                            await loop.run_in_executor(executor, lambda: yt_dlp.YoutubeDL(ydl_opts).download([f'https://www.youtube.com/watch?v={vid_id}']))
+                        if os.path.exists(filepath):
+                            logger.info(f'Song video download succeeded with format: {fmt}')
+                            return filepath
+                    except Exception as fmt_e:
+                        logger.warning(f'Format {fmt} failed for song video {vid_id}: {str(fmt_e)}')
+                        # Remove partial file if it exists
+                        if os.path.exists(filepath):
+                            os.remove(filepath)
+                        continue
+                
+                logger.error('All song video format options failed')
+                return None
             except Exception as e:
                 logger.error(f'yt_dlp song video download failed for {vid_id}: {str(e)}')
                 return None
