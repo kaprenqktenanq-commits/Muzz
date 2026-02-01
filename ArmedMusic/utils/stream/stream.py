@@ -3,7 +3,7 @@ from random import randint
 from typing import Union
 from pyrogram.types import InlineKeyboardMarkup
 import config
-from ArmedMusic import Carbon, YouTube, app
+from ArmedMusic import Carbon, YouTube, app, LOGGER
 from ArmedMusic.core.call import Anony
 from ArmedMusic.misc import db
 from ArmedMusic.utils.database import add_active_video_chat, is_active_chat
@@ -12,6 +12,39 @@ from ArmedMusic.utils.inline import aq_markup, close_markup, stream_markup
 from ArmedMusic.utils.pastebin import AnonyBin
 from ArmedMusic.utils.stream.queue import put_queue, put_queue_index
 from ArmedMusic.utils.thumbnails import get_thumb
+
+
+async def _add_requester_message_link(run, chat_id, caption_template, info_link, title, duration_min, user_name, reply_markup=None):
+    """Edit the just-sent message so the requester name links to the message itself."""
+    try:
+        logger = LOGGER(__name__)
+        if not run:
+            return
+        # Build message link: prefer chat username, else use t.me/c/<chat_id_without_prefix>/<msgid>
+        chat_username = getattr(getattr(run, 'chat', None), 'username', None)
+        if chat_username:
+            message_link = f"https://t.me/{chat_username}/{run.message_id}"
+        else:
+            cid = str(chat_id)
+            if cid.startswith('-100'):
+                short = cid[4:]
+            elif cid.startswith('-'):
+                short = cid[1:]
+            else:
+                short = cid
+            message_link = f"https://t.me/c/{short}/{run.message_id}"
+        new_user = f"<a href='{message_link}'>{user_name}</a>"
+        new_caption = caption_template.format(info_link, title, duration_min, new_user)
+        # Try editing caption (media) first, fallback to edit text
+        try:
+            await run.edit_caption(new_caption, reply_markup=reply_markup)
+        except Exception:
+            try:
+                await run.edit_text(new_caption, reply_markup=reply_markup)
+            except Exception as e:
+                logger.warning(f'Failed to update requester link in message: {e}')
+    except Exception as e:
+        LOGGER(__name__).warning(f'Error in _add_requester_message_link: {e}')
 
 async def stream(_, mystic, user_id, result, chat_id, user_name, original_chat_id, video: Union[bool, str]=None, streamtype: Union[bool, str]=None, spotify: Union[bool, str]=None, forceplay: Union[bool, str]=None):
     if not result:
@@ -56,10 +89,13 @@ async def stream(_, mystic, user_id, result, chat_id, user_name, original_chat_i
                     run = await app.send_photo(chat_id, photo=img, caption=_['stream_1'].format(f'https://t.me/{app.username}?start=info_{vidid}', title, duration_min, user_name), reply_markup=InlineKeyboardMarkup(button))
                     db[chat_id][0]['mystic'] = run
                     db[chat_id][0]['markup'] = 'stream'
+                    # update requester name to link to this message
+                    await _add_requester_message_link(run, chat_id, _['stream_1'], f'https://t.me/{app.username}?start=info_{vidid}', title, duration_min, user_name, InlineKeyboardMarkup(button))
                 except Exception:
                     run = await app.send_message(chat_id, text=_['stream_1'].format(f'https://t.me/{app.username}?start=info_{vidid}', title, duration_min, user_name), reply_markup=InlineKeyboardMarkup(button))
                     db[chat_id][0]['mystic'] = run
                     db[chat_id][0]['markup'] = 'stream'
+                    await _add_requester_message_link(run, chat_id, _['stream_1'], f'https://t.me/{app.username}?start=info_{vidid}', title, duration_min, user_name, InlineKeyboardMarkup(button))
         if count == 0:
             return
         else:
@@ -123,9 +159,11 @@ async def stream(_, mystic, user_id, result, chat_id, user_name, original_chat_i
             try:
                 run = await app.send_photo(chat_id, photo=config.SOUNDCLOUD_IMG_URL, caption=_['stream_1'].format(f'https://t.me/{app.username}?start=info_{streamtype}', title, duration_min, user_name), reply_markup=InlineKeyboardMarkup(button))
                 db[chat_id][0]['mystic'] = run
+                await _add_requester_message_link(run, chat_id, _['stream_1'], f'https://t.me/{app.username}?start=info_{streamtype}', title, duration_min, user_name, InlineKeyboardMarkup(button))
             except Exception:
                 run = await app.send_message(chat_id, text=_['stream_1'].format(f'https://t.me/{app.username}?start=info_{streamtype}', title, duration_min, user_name), reply_markup=InlineKeyboardMarkup(button))
                 db[chat_id][0]['mystic'] = run
+                await _add_requester_message_link(run, chat_id, _['stream_1'], f'https://t.me/{app.username}?start=info_{streamtype}', title, duration_min, user_name, InlineKeyboardMarkup(button))
             db[chat_id][0]['markup'] = 'tg'
     elif streamtype == 'telegram':
         file_path = result['path']
@@ -149,9 +187,11 @@ async def stream(_, mystic, user_id, result, chat_id, user_name, original_chat_i
             try:
                 run = await app.send_photo(chat_id, photo=config.TELEGRAM_VIDEO_URL if video else config.TELEGRAM_AUDIO_URL, caption=_['stream_1'].format(link, title, duration_min, user_name), reply_markup=InlineKeyboardMarkup(button))
                 db[chat_id][0]['mystic'] = run
+                await _add_requester_message_link(run, chat_id, _['stream_1'], link, title, duration_min, user_name, InlineKeyboardMarkup(button))
             except Exception as e:
                 run = await app.send_message(chat_id, text=_['stream_1'].format(link, title, duration_min, user_name), reply_markup=InlineKeyboardMarkup(button))
                 db[chat_id][0]['mystic'] = run
+                await _add_requester_message_link(run, chat_id, _['stream_1'], link, title, duration_min, user_name, InlineKeyboardMarkup(button))
             db[chat_id][0]['markup'] = 'tg'
     elif streamtype == 'live':
         link = result['link']
@@ -177,9 +217,12 @@ async def stream(_, mystic, user_id, result, chat_id, user_name, original_chat_i
             button = stream_markup(_, chat_id)
             try:
                 run = await app.send_photo(chat_id, photo=img, caption=_['stream_1'].format(f'https://t.me/{app.username}?start=info_{vidid}', title, duration_min, user_name), reply_markup=InlineKeyboardMarkup(button))
+                db[chat_id][0]['mystic'] = run
+                await _add_requester_message_link(run, chat_id, _['stream_1'], f'https://t.me/{app.username}?start=info_{vidid}', title, duration_min, user_name, InlineKeyboardMarkup(button))
             except Exception:
                 run = await app.send_message(chat_id, text=_['stream_1'].format(f'https://t.me/{app.username}?start=info_{vidid}', title, duration_min, user_name), reply_markup=InlineKeyboardMarkup(button))
                 db[chat_id][0]['mystic'] = run
+                await _add_requester_message_link(run, chat_id, _['stream_1'], f'https://t.me/{app.username}?start=info_{vidid}', title, duration_min, user_name, InlineKeyboardMarkup(button))
             db[chat_id][0]['markup'] = 'tg'
     elif streamtype == 'index':
         link = result

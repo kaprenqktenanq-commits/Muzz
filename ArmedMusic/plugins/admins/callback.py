@@ -276,6 +276,11 @@ async def del_back_playlist(client, CallbackQuery:CallbackQuery, _):
             )
             db[chat_id][0]["mystic"] = run
             db[chat_id][0]["markup"] = "stream"
+            try:
+                from ArmedMusic.utils.stream.stream import _add_requester_message_link
+                await _add_requester_message_link(run, chat_id, _["stream_1"], f"https://t.me/{app.username}?start=info_{videoid}", title, duration, user, InlineKeyboardMarkup(button))
+            except Exception:
+                pass
             await CallbackQuery.edit_message_text(txt, reply_markup=close_markup(_))
             await mystic.delete()
         elif "index_" in queued:
@@ -291,6 +296,27 @@ async def del_back_playlist(client, CallbackQuery:CallbackQuery, _):
             )
             db[chat_id][0]["mystic"] = run
             db[chat_id][0]["markup"] = "tg"
+            # replace requester name with a link to the message
+            try:
+                chat_username = getattr(getattr(run, 'chat', None), 'username', None)
+                if chat_username:
+                    message_link = f"https://t.me/{chat_username}/{run.message_id}"
+                else:
+                    cid = str(chat_id)
+                    if cid.startswith('-100'):
+                        short = cid[4:]
+                    elif cid.startswith('-'):
+                        short = cid[1:]
+                    else:
+                        short = cid
+                    message_link = f"https://t.me/c/{short}/{run.message_id}"
+                new_caption = _['stream_2'].format(f"<a href='{message_link}'>{user}</a>")
+                try:
+                    await run.edit_caption(new_caption)
+                except Exception:
+                    await run.edit_text(new_caption)
+            except Exception:
+                pass
             await CallbackQuery.edit_message_text(txt, reply_markup=close_markup(_))
         else:
             if videoid == "telegram":
@@ -322,6 +348,11 @@ async def del_back_playlist(client, CallbackQuery:CallbackQuery, _):
                 )
                 db[chat_id][0]["mystic"] = run
                 db[chat_id][0]["markup"] = "tg"
+                try:
+                    from ArmedMusic.utils.stream.stream import _add_requester_message_link
+                    await _add_requester_message_link(run, chat_id, _["stream_1"], f"https://t.me/{app.username}?start=info_{videoid}", title, duration, user, InlineKeyboardMarkup(button))
+                except Exception:
+                    pass
             elif videoid == "soundcloud":
                 button = stream_markup(_, chat_id)
                 run = await CallbackQuery.message.reply_photo(

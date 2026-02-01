@@ -411,6 +411,12 @@ class Call(PyTgCalls):
                 )
                 db[chat_id][0]["mystic"] = run
                 db[chat_id][0]["markup"] = "tg"
+                # make requester name link to the message
+                try:
+                    from ArmedMusic.utils.stream.stream import _add_requester_message_link
+                    await _add_requester_message_link(run, original_chat_id, _["stream_1"], f"https://t.me/{app.username}?start=info_{videoid}", title, check[0]["dur"], user, InlineKeyboardMarkup(button))
+                except Exception:
+                    pass
             elif "vid_" in queued:
                 mystic = await app.send_message(original_chat_id, _["call_7"])
                 try:
@@ -459,6 +465,11 @@ class Call(PyTgCalls):
                 )
                 db[chat_id][0]["mystic"] = run
                 db[chat_id][0]["markup"] = "stream"
+                try:
+                    from ArmedMusic.utils.stream.stream import _add_requester_message_link
+                    await _add_requester_message_link(run, original_chat_id, _["stream_1"], f"https://t.me/{app.username}?start=info_{videoid}", title, check[0]["dur"], user, InlineKeyboardMarkup(button))
+                except Exception:
+                    pass
             elif "index_" in queued:
                 stream = (
                     MediaStream(
@@ -518,6 +529,12 @@ class Call(PyTgCalls):
                             check[0]["dur"],
                             user,
                         ),
+                    )
+                try:
+                    from ArmedMusic.utils.stream.stream import _add_requester_message_link
+                    await _add_requester_message_link(run, original_chat_id, _["stream_1"], f"https://t.me/{app.username}?start=info_{videoid}", title, check[0]["dur"], user, InlineKeyboardMarkup(button))
+                except Exception:
+                    pass
                         reply_markup=InlineKeyboardMarkup(button),
                     )
                     db[chat_id][0]["mystic"] = run

@@ -15,6 +15,7 @@ from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 from ytSearch import VideosSearch, CustomSearch
 import base64
+import subprocess
 from ArmedMusic import LOGGER
 from ArmedMusic.utils.database import is_on_off
 from ArmedMusic.utils.formatters import time_to_seconds
@@ -22,7 +23,7 @@ ITALIC_TO_REGULAR = str.maketrans({119860: 'A', 119861: 'B', 119862: 'C', 119863
 
 def convert_italic_unicode(text):
     return text.translate(ITALIC_TO_REGULAR)
-from config import YT_API_KEY, YTPROXY_URL as YTPROXY, YOUTUBE_PROXY
+from config import YT_API_KEY, YTPROXY_URL as YTPROXY, YOUTUBE_PROXY, YOUTUBE_USE_COOKIES, YOUTUBE_USE_PYTUBE, YOUTUBE_INVIDIOUS_INSTANCES
 logger = LOGGER(__name__)
 
 def cookie_txt_file():
@@ -38,10 +39,14 @@ def cookie_txt_file():
 async def check_file_size(link):
 
     async def get_format_info(link):
-        cmd = ['yt-dlp', '--cookies', cookie_txt_file(), '-J', link]
+        cookie = cookie_txt_file() if YOUTUBE_USE_COOKIES else None
+        if cookie:
+            cmd = ['yt-dlp', '--cookies', cookie, '-J', link]
+        else:
+            cmd = ['yt-dlp', '-J', link]
         if YOUTUBE_PROXY:
             cmd.extend(['--proxy', YOUTUBE_PROXY])
-        proc = await asyncio.create_subprocess_exec(*cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
+        proc = await asyncio.create_subprocess_exec(*cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE) 
         stdout, stderr = await proc.communicate()
         if proc.returncode != 0:
             print(f'Error:\n{stderr.decode()}')
@@ -83,7 +88,15 @@ class YouTubeAPI:
         self.listbase = 'https://youtube.com/playlist?list='
         self.reg = re.compile('\\x1B(?:[@-Z\\\\-_]|\\[[0-?]*[ -/]*[@-~])')
         self.dl_stats = {'total_requests': 0, 'okflix_downloads': 0, 'cookie_downloads': 0, 'existing_files': 0}
+        self.invidious_index = 0
+        self.fallback_search_limit = YOUTUBE_FALLBACK_SEARCH_LIMIT
 
+    def _next_invidious(self):
+        if not YOUTUBE_INVIDIOUS_INSTANCES:
+            return None
+        inst = YOUTUBE_INVIDIOUS_INSTANCES[self.invidious_index % len(YOUTUBE_INVIDIOUS_INSTANCES)]
+        self.invidious_index = (self.invidious_index + 1) % len(YOUTUBE_INVIDIOUS_INSTANCES)
+        return inst
     async def exists(self, link: str, videoid: Union[bool, str]=None):
         if videoid:
             link = self.base + link
@@ -190,7 +203,14 @@ class YouTubeAPI:
             link = link.split('?si=')[0]
         elif '&si=' in link:
             link = link.split('&si=')[0]
-        proc = await asyncio.create_subprocess_exec('yt-dlp', '--cookies', cookie_txt_file(), '-g', '-f', 'best[height<=?720][width<=?1280]', f'{link}', stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
+        cookie = cookie_txt_file() if YOUTUBE_USE_COOKIES else None
+        if cookie:
+            cmd = ['yt-dlp', '--cookies', cookie, '-g', '-f', 'best[height<=?720][width<=?1280]', f'{link}']
+        else:
+            cmd = ['yt-dlp', '-g', '-f', 'best[height<=?720][width<=?1280]', f'{link}']
+        if YOUTUBE_PROXY:
+            cmd.extend(['--proxy', YOUTUBE_PROXY])
+        proc = await asyncio.create_subprocess_exec(*cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
         stdout, stderr = await proc.communicate()
         if stdout:
             return (1, stdout.decode().split('\n')[0])
@@ -206,7 +226,9 @@ class YouTubeAPI:
             link = link.split('?si=')[0]
         elif '&si=' in link:
             link = link.split('&si=')[0]
-        playlist = await shell_cmd(f'yt-dlp -i --get-id --flat-playlist --cookies {cookie_txt_file()} --playlist-end {limit} --skip-download {link}')
+        cookie = cookie_txt_file() if YOUTUBE_USE_COOKIES else None
+        cookie_part = f'--cookies {cookie} ' if cookie else ''
+        playlist = await shell_cmd(f'yt-dlp -i --get-id --flat-playlist {cookie_part}--playlist-end {limit} --skip-download {link}')
         try:
             result = playlist.split('\n')
             for key in result:
@@ -244,7 +266,10 @@ class YouTubeAPI:
             link = link.split('?si=')[0]
         elif '&si=' in link:
             link = link.split('&si=')[0]
-        ytdl_opts = {'quiet': True, 'cookiefile': cookie_txt_file(), 'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36', 'http_headers': {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36', 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8', 'Accept-Language': 'en-us,en;q=0.5', 'Sec-Fetch-Mode': 'navigate'}}
+        ytdl_opts = {'quiet': True, 'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36', 'http_headers': {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36', 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8', 'Accept-Language': 'en-us,en;q=0.5', 'Sec-Fetch-Mode': 'navigate'}}
+        cookie = cookie_txt_file() if YOUTUBE_USE_COOKIES else None
+        if cookie:
+            ytdl_opts['cookiefile'] = cookie
         ydl = yt_dlp.YoutubeDL(ytdl_opts)
         with ydl:
             formats_available = []
@@ -357,7 +382,7 @@ class YouTubeAPI:
                                 logger.info(f'First audio+video format: {audio_formats[0]}')
                 except Exception as info_e:
                     logger.error(f'Failed to get info for {vid_id}: {str(info_e)}')
-                cookie_file = cookie_txt_file()
+                cookie_file = cookie_txt_file() if YOUTUBE_USE_COOKIES else None
                 ydl_opts_list = [
                     {
                         'format': 'bestaudio/best',
@@ -541,6 +566,84 @@ class YouTubeAPI:
                         logger.warning(f'Download config {i + 1} failed for {vid_id}: {error_msg}')
                         continue
                 logger.error(f'All download configurations failed for {vid_id}')
+                # Fallback: try invidious instances (rotated)
+                if YOUTUBE_INVIDIOUS_INSTANCES:
+                    for _ in range(len(YOUTUBE_INVIDIOUS_INSTANCES)):
+                        inst = self._next_invidious()
+                        if not inst:
+                            break
+                        try:
+                            invid_url = f"{inst.rstrip('/')}/watch?v={vid_id}"
+                            ydl_fallback = {'format': 'bestaudio/best', 'outtmpl': os.path.join('downloads', f'{vid_id}'), 'postprocessors': [{'key': 'FFmpegExtractAudio', 'preferredcodec': 'mp3', 'preferredquality': '192'}], 'quiet': True, 'no_warnings': True, 'retries': 5, 'fragment_retries': 5, 'skip_unavailable_fragments': True}
+                            if YOUTUBE_PROXY:
+                                ydl_fallback['proxy'] = YOUTUBE_PROXY
+                            if cookie_file and 'cookiefile' not in ydl_fallback:
+                                ydl_fallback['cookiefile'] = cookie_file
+                            loop = asyncio.get_running_loop()
+                            with ThreadPoolExecutor() as executor:
+                                await loop.run_in_executor(executor, lambda: yt_dlp.YoutubeDL(ydl_fallback).download([invid_url]))
+                            if os.path.exists(filepath):
+                                logger.info(f'Fallback invidious download succeeded with {inst}')
+                                return filepath
+                        except Exception as e:
+                            logger.warning(f'Invidious fallback {inst} failed for {vid_id}: {e}')
+                # Fallback: try pytube if enabled
+                if YOUTUBE_USE_PYTUBE:
+                    try:
+                        from pytube import YouTube as PyTube
+                        tmpfile = os.path.join('downloads', f'{vid_id}_pytube')
+                        yt_obj = PyTube(f'https://www.youtube.com/watch?v={vid_id}')
+                        stream = yt_obj.streams.filter(only_audio=True).order_by('abr').desc().first()
+                        if stream:
+                            out = stream.download(output_path='downloads', filename=f'{vid_id}_pytube')
+                            # convert to mp3
+                            mp3path = filepath
+                            try:
+                                subprocess.run(['ffmpeg', '-y', '-i', out, '-vn', '-ab', '192k', mp3path], check=True)
+                                if os.path.exists(mp3path):
+                                    logger.info('pytube fallback succeeded and converted to mp3')
+                                    # cleanup original
+                                    if os.path.exists(out) and out != mp3path:
+                                        os.remove(out)
+                                    return mp3path
+                            except Exception as conv_e:
+                                logger.warning(f'ffmpeg conversion failed for {out}: {conv_e}')
+                    except Exception as py_e:
+                        logger.warning(f'pytube fallback failed for {vid_id}: {py_e}')
+                # Fallback: try direct stream URLs via yt-dlp -g then download via requests
+                try:
+                    cmd = ['yt-dlp', '-g', f'https://www.youtube.com/watch?v={vid_id}']
+                    cookie = cookie_txt_file() if YOUTUBE_USE_COOKIES else None
+                    if cookie:
+                        cmd = ['yt-dlp', '--cookies', cookie, '-g', f'https://www.youtube.com/watch?v={vid_id}']
+                    if YOUTUBE_PROXY:
+                        cmd.extend(['--proxy', YOUTUBE_PROXY])
+                    proc = await asyncio.create_subprocess_exec(*cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
+                    stdout, stderr = await proc.communicate()
+                    if proc.returncode == 0 and stdout:
+                        urls = stdout.decode().splitlines()
+                        for u in urls:
+                            res = await download_with_requests(u, filepath)
+                            if res:
+                                logger.info('Direct stream fallback succeeded')
+                                return res
+                except Exception as ds_e:
+                    logger.warning(f'Direct-stream fallback failed: {ds_e}')
+                # Fallback: search for other videos with the same title and try them
+                try:
+                    if info and info.get('title'):
+                        title = info.get('title')
+                        search = VideosSearch(title, limit=self.fallback_search_limit)
+                        results = (await search.next()).get('result', [])
+                        for r in results:
+                            alt_vid = r.get('id')
+                            if alt_vid and alt_vid != vid_id:
+                                logger.info(f'Trying alternative video {alt_vid} for title match')
+                                alt_res = await audio_dl(alt_vid)
+                                if alt_res:
+                                    return alt_res
+                except Exception as s_e:
+                    logger.warning(f'Fallback search failed: {s_e}')
                 return None
             except Exception as e:
                 logger.error(f'yt_dlp audio download failed for {vid_id}: {str(e)}')
@@ -594,7 +697,7 @@ class YouTubeAPI:
                 os.makedirs(os.path.dirname(filepath), exist_ok=True)
                 if os.path.exists(filepath):
                     return filepath
-                cookie_file = cookie_txt_file()
+                cookie_file = cookie_txt_file() if YOUTUBE_USE_COOKIES else None
                 ydl_opts_list = [
                     {
                         'format': 'bestaudio/best',
@@ -685,6 +788,78 @@ class YouTubeAPI:
                             break
                         continue
                 logger.error(f'All song audio download configurations failed for {vid_id}')
+                # Fallback: Invidious instances (rotated)
+                if YOUTUBE_INVIDIOUS_INSTANCES:
+                    for _ in range(len(YOUTUBE_INVIDIOUS_INSTANCES)):
+                        inst = self._next_invidious()
+                        if not inst:
+                            break
+                        try:
+                            invid_url = f"{inst.rstrip('/')}/watch?v={vid_id}"
+                            ydl_fallback = {'format': 'bestaudio/best', 'outtmpl': f'downloads/{title}', 'postprocessors': [{'key': 'FFmpegExtractAudio', 'preferredcodec': 'mp3', 'preferredquality': '192'}], 'quiet': True, 'no_warnings': True}
+                            if YOUTUBE_PROXY:
+                                ydl_fallback['proxy'] = YOUTUBE_PROXY
+                            if cookie_file and 'cookiefile' not in ydl_fallback:
+                                ydl_fallback['cookiefile'] = cookie_file
+                            loop = asyncio.get_running_loop()
+                            with ThreadPoolExecutor() as executor:
+                                await loop.run_in_executor(executor, lambda: yt_dlp.YoutubeDL(ydl_fallback).download([invid_url]))
+                            if os.path.exists(filepath):
+                                logger.info(f'Invidious fallback succeeded with {inst}')
+                                return filepath
+                        except Exception as e:
+                            logger.warning(f'Invidious fallback {inst} failed for {vid_id}: {e}')
+                # Fallback: pytube
+                if YOUTUBE_USE_PYTUBE:
+                    try:
+                        from pytube import YouTube as PyTube
+                        stream = PyTube(f'https://www.youtube.com/watch?v={vid_id}').streams.filter(only_audio=True).order_by('abr').desc().first()
+                        if stream:
+                            out = stream.download(output_path='downloads', filename=f'{title}_pytube')
+                            mp3path = filepath
+                            try:
+                                subprocess.run(['ffmpeg', '-y', '-i', out, '-vn', '-ab', '192k', mp3path], check=True)
+                                if os.path.exists(mp3path):
+                                    if os.path.exists(out) and out != mp3path:
+                                        os.remove(out)
+                                    return mp3path
+                            except Exception as conv_e:
+                                logger.warning(f'ffmpeg conversion failed for {out}: {conv_e}')
+                    except Exception as py_e:
+                        logger.warning(f'pytube fallback failed for {vid_id}: {py_e}')
+                # Fallback: try direct stream URLs via yt-dlp -g then download via requests
+                try:
+                    cmd = ['yt-dlp', '-g', f'https://www.youtube.com/watch?v={vid_id}']
+                    cookie = cookie_txt_file() if YOUTUBE_USE_COOKIES else None
+                    if cookie:
+                        cmd = ['yt-dlp', '--cookies', cookie, '-g', f'https://www.youtube.com/watch?v={vid_id}']
+                    if YOUTUBE_PROXY:
+                        cmd.extend(['--proxy', YOUTUBE_PROXY])
+                    proc = await asyncio.create_subprocess_exec(*cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
+                    stdout, stderr = await proc.communicate()
+                    if proc.returncode == 0 and stdout:
+                        urls = stdout.decode().splitlines()
+                        for u in urls:
+                            res = await download_with_requests(u, filepath)
+                            if res:
+                                logger.info('Direct stream fallback succeeded')
+                                return res
+                except Exception as ds_e:
+                    logger.warning(f'Direct-stream fallback failed: {ds_e}')
+                # Fallback: search for other videos with the same title and try them
+                try:
+                    if title:
+                        search = VideosSearch(title, limit=self.fallback_search_limit)
+                        results = (await search.next()).get('result', [])
+                        for r in results:
+                            alt_vid = r.get('id')
+                            if alt_vid and alt_vid != vid_id:
+                                logger.info(f'Trying alternative video {alt_vid} for title match')
+                                alt_res = await song_audio_dl(alt_vid)
+                                if alt_res:
+                                    return alt_res
+                except Exception as s_e:
+                    logger.warning(f'Fallback search failed: {s_e}')
                 return None
             except Exception as e:
                 logger.error(f'yt_dlp song audio download failed for {vid_id}: {str(e)}')

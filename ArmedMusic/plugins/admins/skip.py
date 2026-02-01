@@ -101,6 +101,11 @@ async def skip(cli, message: Message, _, chat_id):
         run = await message.reply_photo(photo=img, caption=_['stream_1'].format(f'https://t.me/{app.username}?start=info_{videoid}', title, check[0]['dur'], user), reply_markup=InlineKeyboardMarkup(button))
         db[chat_id][0]['mystic'] = run
         db[chat_id][0]['markup'] = 'tg'
+        try:
+            from ArmedMusic.utils.stream.stream import _add_requester_message_link
+            await _add_requester_message_link(run, chat_id, _['stream_1'], f'https://t.me/{app.username}?start=info_{videoid}', title, check[0]['dur'], user, InlineKeyboardMarkup(button))
+        except Exception:
+            pass
     elif 'vid_' in queued:
         mystic = await message.reply_text(_['call_7'], disable_web_page_preview=True)
         try:
@@ -120,6 +125,11 @@ async def skip(cli, message: Message, _, chat_id):
         run = await message.reply_photo(photo=img, caption=_['stream_1'].format(f'https://t.me/{app.username}?start=info_{videoid}', title, check[0]['dur'], user), reply_markup=InlineKeyboardMarkup(button))
         db[chat_id][0]['mystic'] = run
         db[chat_id][0]['markup'] = 'stream'
+        try:
+            from ArmedMusic.utils.stream.stream import _add_requester_message_link
+            await _add_requester_message_link(run, chat_id, _['stream_1'], f'https://t.me/{app.username}?start=info_{videoid}', title, check[0]['dur'], user, InlineKeyboardMarkup(button))
+        except Exception:
+            pass
         await mystic.delete()
     elif 'index_' in queued:
         try:
@@ -130,6 +140,27 @@ async def skip(cli, message: Message, _, chat_id):
         run = await message.reply_photo(photo=config.STREAM_IMG_URL, caption=_['stream_2'].format(user), reply_markup=InlineKeyboardMarkup(button))
         db[chat_id][0]['mystic'] = run
         db[chat_id][0]['markup'] = 'tg'
+        # replace requester name with a link to the message
+        try:
+            chat_username = getattr(getattr(run, 'chat', None), 'username', None)
+            if chat_username:
+                message_link = f"https://t.me/{chat_username}/{run.message_id}"
+            else:
+                cid = str(chat_id)
+                if cid.startswith('-100'):
+                    short = cid[4:]
+                elif cid.startswith('-'):
+                    short = cid[1:]
+                else:
+                    short = cid
+                message_link = f"https://t.me/c/{short}/{run.message_id}"
+            new_caption = _['stream_2'].format(f"<a href='{message_link}'>{user}</a>")
+            try:
+                await run.edit_caption(new_caption)
+            except Exception:
+                await run.edit_text(new_caption)
+        except Exception:
+            pass
     else:
         if videoid == 'telegram':
             image = None

@@ -29,3 +29,4 @@ yt-dlp
 yt-search-py
 youtube-search
 youtube-search-python
+pytube

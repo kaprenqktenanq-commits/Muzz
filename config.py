@@ -19,7 +19,18 @@ MONGO_DB_NAME = "armedmusic"
 
 YTPROXY_URL = getenv("YTPROXY_URL", None)
 YOUTUBE_PROXY = getenv("YOUTUBE_PROXY", None)
+
+def _bool_env(var, default=False):
+    val = getenv(var, str(default))
+    return str(val).lower() in ("1", "true", "yes")
+
+YOUTUBE_USE_COOKIES = _bool_env("YOUTUBE_USE_COOKIES", False)
+YOUTUBE_USE_PYTUBE = _bool_env("YOUTUBE_USE_PYTUBE", False)
+# Comma separated list of invidious instances: "https://yewtu.cafe,https://yewtu.eu"
+YOUTUBE_INVIDIOUS_INSTANCES = [i.strip() for i in getenv("YOUTUBE_INVIDIOUS_INSTANCES", "").split(",") if i.strip()]
+
 YT_API_KEY = getenv("YT_API_KEY" , "AIzaSyAyFW-9snpxGwFa5cu-p81jjE8Fg1h_6rk" )
+YOUTUBE_FALLBACK_SEARCH_LIMIT = int(getenv("YOUTUBE_FALLBACK_SEARCH_LIMIT", "5"))
 
 DURATION_LIMIT_MIN = int(getenv("DURATION_LIMIT", 300))
 
