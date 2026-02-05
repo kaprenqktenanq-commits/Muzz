@@ -15,7 +15,7 @@ BOT_TOKEN = getenv("BOT_TOKEN", "8568049660:AAHZl3Wg5b-MTXBjhQbsn9MrP9cCKbWjgDs"
 # For Railway: Use MONGO_URL or construct from individual variables
 _mongo_user = getenv("MONGOUSER", getenv("MONGO_INITDB_ROOT_USERNAME", "mongo"))
 _mongo_pass = getenv("MONGOPASSWORD", getenv("MONGO_INITDB_ROOT_PASSWORD", "TyIYFavtqzNXyzLvFBSvjmUiFiDqdHak"))
-_mongo_host = getenv("MONGOHOST", getenv("RAILWAY_PRIVATE_DOMAIN", "mongodb.railway.internal"))
+_mongo_host = getenv("MONGOHOST", "mongodb.railway.internal")
 _mongo_port = getenv("MONGOPORT", "27017")
 
 # Try to use MONGO_URL first, otherwise construct it
