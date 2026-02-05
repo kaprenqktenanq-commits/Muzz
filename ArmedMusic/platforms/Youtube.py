@@ -192,16 +192,34 @@ class YouTubeAPI:
         elif '&si=' in link:
             link = link.split('&si=')[0]
         
-        # Try multiple format options as fallbacks
-        format_options = [
-            'best[height<=?720][width<=?1280]',
-            'best[height<=?480][width<=?854]', 
-            'best[height<=?360][width<=?640]',
-            '18',  # Explicitly try format 18
-            'best'
-        ]
-        
-        for fmt in format_options:
+        # Dynamically build format candidates from extractor info, prefer audio-only
+                url_to_check = f'https://www.youtube.com/watch?v={vid_id}'
+                format_options = []
+                try:
+                    with yt_dlp.YoutubeDL({'quiet': True}) as ydl_info:
+                        info_local = ydl_info.extract_info(url_to_check, download=False)
+                        formats = info_local.get('formats', []) or []
+                        audio_only = [f for f in formats if f.get('acodec') and f.get('acodec') != 'none' and (not f.get('vcodec') or f.get('vcodec') == 'none')]
+                        if audio_only:
+                            audio_sorted = sorted(audio_only, key=lambda f: float(f.get('abr') or 0), reverse=True)
+                            format_options.extend([f.get('format_id') for f in audio_sorted if f.get('format_id')])
+                        video_fmts = [f for f in formats if f.get('vcodec') and f.get('vcodec') != 'none']
+                        if video_fmts:
+                            video_sorted = sorted(video_fmts, key=lambda f: int(f.get('height') or 0), reverse=True)
+                            format_options.extend([f.get('format_id') for f in video_sorted if f.get('format_id')])
+                except Exception as info_e:
+                    logger.debug(f'Could not extract formats for dynamic selection: {info_e}')
+
+        # Deduplicate while preserving order and add safe fallbacks
+        seen = set()
+        deduped = []
+        for f in format_options:
+            if f and f not in seen:
+                deduped.append(f)
+                seen.add(f)
+        deduped.extend(["bestaudio/best", "best", "18"])  # fallbacks
+
+        for fmt in deduped:
             try:
                 cmd = ['yt-dlp', '-g', '-f', fmt, f'{link}']
                 if YOUTUBE_PROXY:
@@ -694,24 +712,41 @@ class YouTubeAPI:
                 if os.path.exists(filepath):
                     return filepath
                 
-                # Try multiple format options as fallbacks
-                format_options = [
-                    'best[height<=720]/best',
-                    'best[height<=480]/best', 
-                    'best[height<=360]/best',
-                    '18/best',  # Explicitly include format 18
-                    'best'
-                ]
-                
-                for fmt in format_options:
+                # Dynamically build format candidates from extractor info for this vid
+                url_to_check = f'https://www.youtube.com/watch?v={vid_id}'
+                format_options = []
+                try:
+                    with yt_dlp.YoutubeDL({'quiet': True}) as ydl_info:
+                        info_local = ydl_info.extract_info(url_to_check, download=False)
+                        formats = info_local.get('formats', []) or []
+                        audio_only = [f for f in formats if f.get('acodec') and f.get('acodec') != 'none' and (not f.get('vcodec') or f.get('vcodec') == 'none')]
+                        if audio_only:
+                            audio_sorted = sorted(audio_only, key=lambda f: float(f.get('abr') or 0), reverse=True)
+                            format_options.extend([f.get('format_id') for f in audio_sorted if f.get('format_id')])
+                        video_fmts = [f for f in formats if f.get('vcodec') and f.get('vcodec') != 'none']
+                        if video_fmts:
+                            video_sorted = sorted(video_fmts, key=lambda f: int(f.get('height') or 0), reverse=True)
+                            format_options.extend([f.get('format_id') for f in video_sorted if f.get('format_id')])
+                except Exception as info_e:
+                    logger.debug(f'Could not extract formats for dynamic selection: {info_e}')
+
+                seen = set()
+                deduped = []
+                for f in format_options:
+                    if f and f not in seen:
+                        deduped.append(f)
+                        seen.add(f)
+                deduped.extend(["bestaudio/best", "best", "18/best"])  # fallbacks
+
+                for fmt in deduped:
                     try:
                         ydl_opts = {
-                            'format': fmt, 
-                            'outtmpl': filepath, 
-                            'quiet': True, 
-                            'no_warnings': True, 
-                            'retries': 10, 
-                            'fragment_retries': 10, 
+                            'format': fmt,
+                            'outtmpl': filepath,
+                            'quiet': True,
+                            'no_warnings': True,
+                            'retries': 10,
+                            'fragment_retries': 10,
                             'skip_unavailable_fragments': True, 
                             'http_headers': {
                                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36', 
@@ -759,39 +794,56 @@ class YouTubeAPI:
                 if os.path.exists(filepath):
                     return filepath
                 
-                # Try multiple format options as fallbacks
-                format_options = [
-                    'best[height<=720]/best',
-                    'best[height<=480]/best', 
-                    'best[height<=360]/best',
-                    '18/best',  # Explicitly include format 18
-                    'best'
-                ]
-                
-                for fmt in format_options:
+                # Dynamically build format candidates from extractor info for this vid
+                url_to_check = f'https://www.youtube.com/watch?v={vid_id}'
+                format_options = []
+                try:
+                    with yt_dlp.YoutubeDL({'quiet': True}) as ydl_info:
+                        info_local = ydl_info.extract_info(url_to_check, download=False)
+                        formats = info_local.get('formats', []) or []
+                        audio_only = [f for f in formats if f.get('acodec') and f.get('acodec') != 'none' and (not f.get('vcodec') or f.get('vcodec') == 'none')]
+                        if audio_only:
+                            audio_sorted = sorted(audio_only, key=lambda f: float(f.get('abr') or 0), reverse=True)
+                            format_options.extend([f.get('format_id') for f in audio_sorted if f.get('format_id')])
+                        video_fmts = [f for f in formats if f.get('vcodec') and f.get('vcodec') != 'none']
+                        if video_fmts:
+                            video_sorted = sorted(video_fmts, key=lambda f: int(f.get('height') or 0), reverse=True)
+                            format_options.extend([f.get('format_id') for f in video_sorted if f.get('format_id')])
+                except Exception as info_e:
+                    logger.debug(f'Could not extract formats for dynamic selection: {info_e}')
+
+                seen = set()
+                deduped = []
+                for f in format_options:
+                    if f and f not in seen:
+                        deduped.append(f)
+                        seen.add(f)
+                deduped.extend(["bestaudio/best", "best", "18/best"])  # fallbacks
+
+                for fmt in deduped:
                     try:
                         ydl_opts = {
-                            'format': fmt, 
-                            'outtmpl': filepath, 
-                            'quiet': True, 
-                            'no_warnings': True, 
-                            'retries': 10, 
-                            'fragment_retries': 10, 
-                            'skip_unavailable_fragments': True, 
+                            'format': fmt,
+                            'outtmpl': filepath,
+                            'quiet': True,
+                            'no_warnings': True,
+                            'retries': 10,
+                            'fragment_retries': 10,
+                            'skip_unavailable_fragments': True,
                             'http_headers': {
-                                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36', 
-                                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8', 
-                                'Accept-Language': 'en-us,en;q=0.5', 
-                                'Sec-Fetch-Mode': 'navigate', 
-                                'Sec-Fetch-Dest': 'document', 
-                                'Sec-Fetch-Site': 'none', 
-                                'Sec-Fetch-User': '?1', 
+                                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+                                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                                'Accept-Language': 'en-us,en;q=0.5',
+                                'Sec-Fetch-Mode': 'navigate',
+                                'Sec-Fetch-Dest': 'document',
+                                'Sec-Fetch-Site': 'none',
+                                'Sec-Fetch-User': '?1',
                                 'Upgrade-Insecure-Requests': '1'
-                            }, 
+                            },
                             'extractor_args': {
                                 'youtube': {
-                                    'player_client': ['web'], 
-                                    'player_skip': ['js'], 
+                                    'player_client': ['web'],
+                                    'player_skip': ['js'],
                                     'innertube_client': 'web'
                                 }
                             }
@@ -800,7 +852,7 @@ class YouTubeAPI:
                             ydl_opts['proxy'] = YOUTUBE_PROXY
                         loop = asyncio.get_running_loop()
                         with ThreadPoolExecutor() as executor:
-                            await loop.run_in_executor(executor, lambda: yt_dlp.YoutubeDL(ydl_opts).download([f'https://www.youtube.com/watch?v={vid_id}']))
+                            await loop.run_in_executor(executor, lambda: yt_dlp.YoutubeDL(ydl_opts).download([url_to_check]))
                         if os.path.exists(filepath):
                             logger.info(f'Song video download succeeded with format: {fmt}')
                             return filepath
