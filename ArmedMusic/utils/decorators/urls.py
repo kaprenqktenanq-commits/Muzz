@@ -20,7 +20,7 @@ BLOCKED_URL_PATTERNS = [
     'snip.ly/',
 ]
 
-def no_preview_urls(client, message):
+def no_preview_urls(flt, client, message):
     """Filter to block messages containing preview or shortened URLs"""
     if not message:
         return True
