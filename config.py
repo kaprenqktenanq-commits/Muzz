@@ -28,8 +28,7 @@ else:
     if _mongo_pass:
         MONGO_DB_URI = f"mongodb://{_mongo_user}:{_mongo_pass}@{_mongo_host}:{_mongo_port}/armedmusic?authSource=admin"
     else:
-        MONGO_DB_URI = f"mongo
-        db://{_mongo_host}:{_mongo_port}/armedmusic"
+        MONGO_DB_URI = f"mongodb://{_mongo_host}:{_mongo_port}/armedmusic"
 
 # Имя базы данных (для твоего бота)
 MONGO_DB_NAME = getenv("MONGO_DB_NAME", "armedmusic")
