@@ -1,4 +1,4 @@
-from ArmedMusic.core.bot import ArmedMusic
+from ArmedMusic.core.bot import Anony
 from ArmedMusic.core.dir import dirr
 from ArmedMusic.core.userbot import Userbot
 from ArmedMusic.misc import dbb
