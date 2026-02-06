@@ -22,6 +22,30 @@ EXTERNAL_SERVICES = [
         'api': 'https://www.ympe.co/api/convert',
         'method': 'POST',
         'url_param': 'link'
+    },
+    {
+        'name': 'ytmp3.cc',
+        'api': 'https://yt-downloader.org/api/button/mp3',
+        'method': 'POST',
+        'url_param': 'url'
+    },
+    {
+        'name': 'y2mate.com',
+        'api': 'https://www.y2mate.com/api/info',
+        'method': 'POST',
+        'url_param': 'url'
+    },
+    {
+        'name': 'mp3youtube.download',
+        'api': 'https://mp3youtube.download/api/download',
+        'method': 'POST',
+        'url_param': 'url'
+    },
+    {
+        'name': 'tube2mp3.com',
+        'api': 'https://api.tube2mp3.com/convert',
+        'method': 'POST',
+        'url_param': 'url'
     }
 ]
 
@@ -29,11 +53,17 @@ async def try_external_mp3_extraction(video_url: str, filepath: str) -> Optional
     """
     Try to download MP3 from external MP3 extraction services.
     These are cloud-based converters that can bypass YouTube restrictions.
+    Returns filepath on success, None on all failures.
     """
     import os
     import subprocess
     
-    for service in EXTERNAL_SERVICES:
+    # Randomize service order to distribute load
+    services = EXTERNAL_SERVICES.copy()
+    import random
+    random.shuffle(services)
+    
+    for service in services:
         try:
             service_name = service.get('name', 'unknown')
             
@@ -108,6 +138,51 @@ async def try_external_mp3_extraction(video_url: str, filepath: str) -> Optional
                                             with open(filepath, 'wb') as f:
                                                 f.write(await download_resp.read())
                                             return filepath
+                except Exception as e:
+                    continue
+            
+            else:
+                # Generic handler for other services
+                try:
+                    method = service.get('method', 'POST').upper()
+                    url_param = service.get('url_param', 'url')
+                    
+                    async with aiohttp.ClientSession() as session:
+                        if method == 'GET':
+                            params = {url_param: video_url}
+                            async with session.get(
+                                service['api'],
+                                params=params,
+                                timeout=aiohttp.ClientTimeout(total=30)
+                            ) as resp:
+                                if resp.status == 200:
+                                    data = await resp.json()
+                                    # Try common response keys
+                                    mp3_url = data.get('url') or data.get('downloadLink') or data.get('link') or data.get('download')
+                                    if mp3_url:
+                                        async with session.get(mp3_url) as download_resp:
+                                            if download_resp.status == 200:
+                                                os.makedirs(os.path.dirname(filepath), exist_ok=True)
+                                                with open(filepath, 'wb') as f:
+                                                    f.write(await download_resp.read())
+                                                return filepath
+                        else:  # POST
+                            payload = {url_param: video_url}
+                            async with session.post(
+                                service['api'],
+                                json=payload,
+                                timeout=aiohttp.ClientTimeout(total=30)
+                            ) as resp:
+                                if resp.status == 200:
+                                    data = await resp.json()
+                                    mp3_url = data.get('url') or data.get('downloadLink') or data.get('link') or data.get('download')
+                                    if mp3_url:
+                                        async with session.get(mp3_url) as download_resp:
+                                            if download_resp.status == 200:
+                                                os.makedirs(os.path.dirname(filepath), exist_ok=True)
+                                                with open(filepath, 'wb') as f:
+                                                    f.write(await download_resp.read())
+                                                return filepath
                 except Exception as e:
                     continue
         

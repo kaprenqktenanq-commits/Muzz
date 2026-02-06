@@ -9,6 +9,7 @@ from pyrogram.types import Message
 from ytSearch import VideosSearch
 from ArmedMusic import app
 from ArmedMusic.utils.decorators.urls import no_preview_filter
+from ArmedMusic.utils.external_extractors import try_external_mp3_extraction
 from config import BANNED_USERS, YOUTUBE_PROXY
 from ArmedMusic import LOGGER
 logger = LOGGER(__name__)
@@ -64,14 +65,33 @@ async def song_download(client, message: Message):
         thumbnail_url = info.get('thumbnail', '')
         safe_title = re.sub('[<>:"/\\\\|?*]', '', f'{title} - {uploader}')
         filepath = f'downloads/{safe_title}.mp3'
-        ydl_opts_audio = {'format': 'bestaudio[ext=m4a]/bestaudio[acodec=mp4a]/140/bestaudio/best[ext=mp4]/best', 'outtmpl': f'downloads/{safe_title}', 'postprocessors': [{'key': 'FFmpegExtractAudio', 'preferredcodec': 'mp3', 'preferredquality': '192'}], 'quiet': True, 'no_warnings': True, 'retries': 5, 'fragment_retries': 5, 'skip_unavailable_fragments': True}
-        if YOUTUBE_PROXY:
-            ydl_opts_audio['proxy'] = YOUTUBE_PROXY
-        with ThreadPoolExecutor() as executor:
-            await loop.run_in_executor(executor, lambda: yt_dlp.YoutubeDL(ydl_opts_audio).download([video_url]))
-        if not os.path.exists(filepath):
-            await processing_msg.edit_text('❌ Failed to download the song.')
+        
+        # Try primary download method first
+        download_success = False
+        try:
+            ydl_opts_audio = {'format': 'bestaudio[ext=m4a]/bestaudio[acodec=mp4a]/140/bestaudio/best[ext=mp4]/best', 'outtmpl': f'downloads/{safe_title}', 'postprocessors': [{'key': 'FFmpegExtractAudio', 'preferredcodec': 'mp3', 'preferredquality': '192'}], 'quiet': True, 'no_warnings': True, 'retries': 5, 'fragment_retries': 5, 'skip_unavailable_fragments': True}
+            if YOUTUBE_PROXY:
+                ydl_opts_audio['proxy'] = YOUTUBE_PROXY
+            with ThreadPoolExecutor() as executor:
+                await loop.run_in_executor(executor, lambda: yt_dlp.YoutubeDL(ydl_opts_audio).download([video_url]))
+            if os.path.exists(filepath):
+                download_success = True
+        except Exception as ydl_error:
+            logger.warning(f'Primary download method failed: {ydl_error}')
+        
+        # Fallback to external MP3 extraction services if primary method fails
+        if not download_success:
+            logger.info(f'Trying external MP3 extraction services for: {video_url}')
+            await processing_msg.edit_text('🔄 Trying alternative download method...')
+            result = await try_external_mp3_extraction(video_url, filepath)
+            if result:
+                download_success = True
+                logger.info(f'External extraction succeeded for {safe_title}')
+        
+        if not download_success:
+            await processing_msg.edit_text('❌ Failed to download the song from all sources.')
             return
+        
         thumb_path = None
         if thumbnail_url:
             thumb_filename = f'{safe_title}_thumb.jpg'
