@@ -445,20 +445,29 @@ class YouTubeAPI:
                         },
                         'extractor_args': {'youtube': {'player_client': ['ios', 'android', 'web'], 'player_skip': ['js', 'webpage'], 'innertube_client': 'ios'}}
                     }
-                    with yt_dlp.YoutubeDL(info_opts) as ydl:
-                        info = ydl.extract_info(f'https://www.youtube.com/watch?v={vid_id}', download=False)
-                        formats = info.get('formats', [])
-                        audio_formats = [f for f in formats if f.get('acodec') != 'none' and f.get('vcodec') == 'none']
-                        logger.info(f'Available pure audio formats for {vid_id}: {len(audio_formats)} formats')
-                        if audio_formats:
-                            logger.info(f'First pure audio format: {audio_formats[0]}')
-                        else:
-                            audio_formats = [f for f in formats if f.get('acodec') != 'none']
-                            logger.info(f'Available audio+video formats for {vid_id}: {len(audio_formats)} formats')
+                    # Suppress stderr/stdout during info extraction
+                    old_stderr = sys.stderr
+                    old_stdout = sys.stdout
+                    sys.stderr = io.StringIO()
+                    sys.stdout = io.StringIO()
+                    try:
+                        with yt_dlp.YoutubeDL(info_opts) as ydl:
+                            info = ydl.extract_info(f'https://www.youtube.com/watch?v={vid_id}', download=False)
+                            formats = info.get('formats', [])
+                            audio_formats = [f for f in formats if f.get('acodec') != 'none' and f.get('vcodec') == 'none']
+                            logger.debug(f'Available pure audio formats for {vid_id}: {len(audio_formats)} formats')
                             if audio_formats:
-                                logger.info(f'First audio+video format: {audio_formats[0]}')
+                                logger.debug(f'First pure audio format: {audio_formats[0]}')
+                            else:
+                                audio_formats = [f for f in formats if f.get('acodec') != 'none']
+                                logger.debug(f'Available audio+video formats for {vid_id}: {len(audio_formats)} formats')
+                                if audio_formats:
+                                    logger.debug(f'First audio+video format: {audio_formats[0]}')
+                    finally:
+                        sys.stderr = old_stderr
+                        sys.stdout = old_stdout
                 except Exception as info_e:
-                    logger.warning(f'Failed to get info for {vid_id}: {str(info_e)}')
+                    logger.debug(f'Info extraction for {vid_id} skipped (will try fallbacks)')
                 # Try invidious instances first
                 if YOUTUBE_INVIDIOUS_INSTANCES:
                     for _ in range(len(YOUTUBE_INVIDIOUS_INSTANCES)):
@@ -471,8 +480,17 @@ class YouTubeAPI:
                             if YOUTUBE_PROXY:
                                 ydl_fallback['proxy'] = YOUTUBE_PROXY
                             loop = asyncio.get_running_loop()
-                            with ThreadPoolExecutor() as executor:
-                                await loop.run_in_executor(executor, lambda: yt_dlp.YoutubeDL(ydl_fallback).download([invid_url]))
+                            # Suppress stderr/stdout during Invidious download attempt
+                            old_stderr = sys.stderr
+                            old_stdout = sys.stdout
+                            sys.stderr = io.StringIO()
+                            sys.stdout = io.StringIO()
+                            try:
+                                with ThreadPoolExecutor() as executor:
+                                    await loop.run_in_executor(executor, lambda: yt_dlp.YoutubeDL(ydl_fallback).download([invid_url]))
+                            finally:
+                                sys.stderr = old_stderr
+                                sys.stdout = old_stdout
                             if os.path.exists(filepath):
                                 logger.info(f'Invidious download succeeded with {inst}')
                                 return filepath
@@ -480,11 +498,11 @@ class YouTubeAPI:
                             error_msg = str(e)
                             # Skip if authentication-related or network-related
                             if 'Sign in to confirm' in error_msg or 'cookies' in error_msg.lower():
-                                logger.warning(f'Invidious {inst} requires authentication (skipping)')
+                                logger.debug(f'Invidious {inst} requires authentication (skipping)')
                             elif 'Failed to resolve' in error_msg or 'Name or service not known' in error_msg:
-                                logger.warning(f'Invidious {inst} DNS/network error (skipping)')
+                                logger.debug(f'Invidious {inst} DNS/network error (skipping)')
                             else:
-                                logger.warning(f'Invidious {inst} failed for {vid_id}: {e}')
+                                logger.debug(f'Invidious {inst} failed for {vid_id} (will try next fallback)')
                 # Try pytube if enabled
                 if YOUTUBE_USE_PYTUBE:
                     try:
@@ -510,9 +528,9 @@ class YouTubeAPI:
                         error_msg = str(py_e)
                         # Skip if authentication-related
                         if 'Sign in to confirm' in error_msg or 'cookies' in error_msg.lower():
-                            logger.warning(f'pytube requires authentication (skipping): {error_msg}')
+                            logger.debug(f'pytube requires authentication (skipping)')
                         else:
-                            logger.warning(f'pytube failed for {vid_id}: {py_e}')
+                            logger.debug(f'pytube failed (will try next method)')
                 ydl_opts_list = [
                     {
                         'format': 'bestaudio/best',
@@ -692,22 +710,18 @@ class YouTubeAPI:
                             loop = asyncio.get_running_loop()
                             with ThreadPoolExecutor() as executor:
                                 result = await loop.run_in_executor(executor, lambda: yt_dlp.YoutubeDL(ydl_opts).download([f'https://www.youtube.com/watch?v={vid_id}']))
-                                logger.info(f'yt_dlp download result for {vid_id} (config {i + 1}): {result}')
-                            logger.info(f'Checking for file at {filepath}')
                             if os.path.exists(filepath):
-                                logger.info(f'File found: {filepath}')
+                                logger.debug(f'yt_dlp download config {i + 1} succeeded')
                                 return filepath
-                            else:
-                                logger.warning(f'Download config {i + 1} completed but file not found at {filepath}')
                         except Exception as e:
                             error_msg = str(e)
                             # Skip this variant if it requires authentication
                             if 'Sign in to confirm' in error_msg or 'cookies' in error_msg.lower():
-                                logger.warning(f'Download config {i + 1} requires authentication (skipping): {error_msg}')
+                                logger.debug(f'Download config {i + 1} requires authentication (trying next)')
                                 continue
-                            logger.warning(f'Download config {i + 1} failed for {vid_id}: {error_msg}')
+                            logger.debug(f'Download config {i + 1} failed (trying next)')
                             continue
-                    logger.error(f'All download configurations failed for {vid_id}')
+                    logger.debug(f'All direct YouTube yt_dlp download configurations failed for {vid_id}')
                 else:
                     logger.info(f'Skipping all direct YouTube yt-dlp methods for {vid_id} (requires authentication)')
                 # Fallback: try direct stream URLs via yt-dlp -g then download via requests
@@ -741,8 +755,17 @@ class YouTubeAPI:
                             'quiet': True,
                             'no_warnings': True,
                         }
-                        with legacy_ytdl.YoutubeDL(legacy_opts) as ydl_l:
-                            ydl_l.download([f'https://www.youtube.com/watch?v={vid_id}'])
+                        # Suppress stderr/stdout during legacy youtube_dl attempt
+                        old_stderr = sys.stderr
+                        old_stdout = sys.stdout
+                        sys.stderr = io.StringIO()
+                        sys.stdout = io.StringIO()
+                        try:
+                            with legacy_ytdl.YoutubeDL(legacy_opts) as ydl_l:
+                                ydl_l.download([f'https://www.youtube.com/watch?v={vid_id}'])
+                        finally:
+                            sys.stderr = old_stderr
+                            sys.stdout = old_stdout
                         if os.path.exists(filepath):
                             logger.info('Legacy youtube_dl fallback succeeded')
                             return filepath
@@ -750,9 +773,9 @@ class YouTubeAPI:
                         error_msg = str(ly_e)
                         # Skip if authentication-related
                         if 'Sign in to confirm' in error_msg or 'cookies' in error_msg.lower():
-                            logger.warning(f'Legacy youtube_dl requires authentication (skipping): {error_msg}')
+                            logger.debug(f'Legacy youtube_dl requires authentication (skipping)')
                         else:
-                            logger.warning(f'Legacy youtube_dl fallback failed: {ly_e}')
+                            logger.debug(f'Legacy youtube_dl fallback failed (will try next method)')
                 except Exception:
                     # youtube_dl not installed or import failed - ignore
                     pass
@@ -767,9 +790,9 @@ class YouTubeAPI:
                     error_msg = str(ext_e)
                     # Skip if authentication-related
                     if 'Sign in to confirm' in error_msg or 'cookies' in error_msg.lower():
-                        logger.warning(f'External services require authentication (skipping): {error_msg}')
+                        logger.debug(f'External services require authentication (skipping)')
                     else:
-                        logger.warning(f'External MP3 extraction failed: {ext_e}')
+                        logger.debug(f'External MP3 extraction failed (will try next method)')
                 # Fallback: search for other videos with the same title and try them
                 try:
                     if info and isinstance(info, dict) and info.get('title'):
