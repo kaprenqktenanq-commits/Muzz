@@ -397,11 +397,13 @@ class Call(PyTgCalls):
                     )
                 img = await get_thumb(videoid,user_id)
                 button = stream_markup(_, chat_id)
+                # For Telegram files, use stored link; for YouTube, use info link
+                msg_link = check[0].get('link', f"https://t.me/{app.username}?start=info_{videoid}")
                 run = await app.send_photo(
                     chat_id=original_chat_id,
                     photo=img,
                     caption=_["stream_1"].format(
-                        f"https://t.me/{app.username}?start=info_{videoid}",
+                        msg_link,
                         title,
                         check[0]["dur"],
                         user,
@@ -409,11 +411,11 @@ class Call(PyTgCalls):
                     reply_markup=InlineKeyboardMarkup(button),
                 )
                 db[chat_id][0]["mystic"] = run
-                db[chat_id][0]["markup"] = "tg"
+                db[chat_id][0]["markup"] = "yt"
                 # make requester name link to the message
                 try:
                     from ArmedMusic.utils.stream.stream import _add_requester_message_link
-                    await _add_requester_message_link(run, original_chat_id, _["stream_1"], f"https://t.me/{app.username}?start=info_{videoid}", title, check[0]["dur"], user, InlineKeyboardMarkup(button))
+                    await _add_requester_message_link(run, original_chat_id, _["stream_1"], msg_link, title, check[0]["dur"], user, InlineKeyboardMarkup(button))
                 except Exception:
                     pass
             elif "vid_" in queued:
@@ -451,11 +453,13 @@ class Call(PyTgCalls):
                 img = await get_thumb(videoid,user_id)
                 button = stream_markup(_, chat_id)
                 await mystic.delete()
+                # For Telegram files, use stored link; for YouTube, use info link
+                msg_link = check[0].get('link', f"https://t.me/{app.username}?start=info_{videoid}")
                 run = await app.send_photo(
                     chat_id=original_chat_id,
                     photo=img,
                     caption=_["stream_1"].format(
-                        f"https://t.me/{app.username}?start=info_{videoid}",
+                        msg_link,
                         title,
                         check[0]["dur"],
                         user,
@@ -463,10 +467,10 @@ class Call(PyTgCalls):
                     reply_markup=InlineKeyboardMarkup(button),
                 )
                 db[chat_id][0]["mystic"] = run
-                db[chat_id][0]["markup"] = "stream"
+                db[chat_id][0]["markup"] = "yt"
                 try:
                     from ArmedMusic.utils.stream.stream import _add_requester_message_link
-                    await _add_requester_message_link(run, original_chat_id, _["stream_1"], f"https://t.me/{app.username}?start=info_{videoid}", title, check[0]["dur"], user, InlineKeyboardMarkup(button))
+                    await _add_requester_message_link(run, original_chat_id, _["stream_1"], msg_link, title, check[0]["dur"], user, InlineKeyboardMarkup(button))
                 except Exception:
                     pass
             elif "index_" in queued:
@@ -517,8 +521,8 @@ class Call(PyTgCalls):
                     )
                 if videoid == "file_id":
                     button = stream_markup(_, chat_id)
-                    # Use original message link from database (always available for Telegram files)
-                    msg_link = check[0].get('link', check[0].get('link'))
+                    # Use original message link from database (guaranteed for Telegram files)
+                    msg_link = check[0].get('link') or f"https://t.me/{app.username}"
                     run = await app.send_photo(
                         chat_id=original_chat_id,
                         photo=config.TELEGRAM_AUDIO_URL if str(streamtype) == "audio" else config.TELEGRAM_VIDEO_URL,
@@ -539,11 +543,13 @@ class Call(PyTgCalls):
                     db[chat_id][0]["markup"] = "tg"
                 elif videoid == "soundcloud":
                     button = stream_markup(_, chat_id)
+                    # Use stored link if available, otherwise use info link
+                    msg_link = check[0].get('link', f"https://t.me/{app.username}?start=info_{videoid}")
                     run = await app.send_photo(
                         chat_id=original_chat_id,
                         photo=config.SOUNCLOUD_IMG_URL,
                         caption=_["stream_1"].format(
-                            f"https://t.me/{app.username}?start=info_{videoid}",
+                            msg_link,
                             title,
                             check[0]["dur"],
                             user,
@@ -555,11 +561,13 @@ class Call(PyTgCalls):
                 else:
                     img = await get_thumb(videoid,user_id)
                     button = stream_markup(_, chat_id)
+                    # Use stored link if available, otherwise use info link
+                    msg_link = check[0].get('link', f"https://t.me/{app.username}?start=info_{videoid}")
                     run = await app.send_photo(
                         chat_id=original_chat_id,
                         photo=img,
                         caption=_["stream_1"].format(
-                            f"https://t.me/{app.username}?start=info_{videoid}",
+                            msg_link,
                             title,
                             check[0]["dur"],
                             user,
