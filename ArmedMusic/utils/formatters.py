@@ -97,6 +97,22 @@ def speed_converter(seconds, speed):
             return (convert, collect)
     return '-'
 
+def clean_query(query: str) -> str:
+    """
+    Remove URLs and links from search query text.
+    Specifically removes telegram and other HTTP/HTTPS URLs.
+    """
+    import re
+    if not query:
+        return query
+    # Remove HTTP/HTTPS URLs
+    query = re.sub(r'https?://\S+', '', query)
+    # Remove t.me links
+    query = re.sub(r't\.me/\S+', '', query)
+    # Remove extra whitespace
+    query = ' '.join(query.split())
+    return query.strip()
+
 def check_duration(file_path):
     command = ['ffprobe', '-loglevel', 'quiet', '-print_format', 'json', '-show_format', '-show_streams', file_path]
     pipe = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)

@@ -13,7 +13,7 @@ from ArmedMusic.utils.channelplay import get_channeplayCB
 from ArmedMusic.utils.decorators.language import languageCB
 from ArmedMusic.utils.decorators.play import PlayWrapper
 from ArmedMusic.utils.decorators.urls import no_preview_filter
-from ArmedMusic.utils.formatters import formats
+from ArmedMusic.utils.formatters import formats, clean_query
 from ArmedMusic.utils.inline import botplaylist_markup, livestream_markup, playlist_markup, slider_markup, track_markup
 from ArmedMusic.utils.logger import play_logs
 from ArmedMusic.utils.stream.stream import stream
@@ -207,6 +207,7 @@ async def play_commnd(client, message: Message, _, chat_id, video, channel, play
         query = message.text.split(None, 1)[1]
         if '-v' in query:
             query = query.replace('-v', '')
+        query = clean_query(query)
         try:
             details, track_id = await YouTube.track(query)
         except:

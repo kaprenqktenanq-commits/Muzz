@@ -515,10 +515,10 @@ class Call(PyTgCalls):
                         original_chat_id,
                         text=_["call_6"],
                     )
-                if videoid == "telegram":
+                if videoid == "file_id":
                     button = stream_markup(_, chat_id)
-                    # Use original message link if available, otherwise use info_telegram
-                    msg_link = check[0].get('link', f"https://t.me/{app.username}?start=info_{videoid}")
+                    # Use original message link from database (always available for Telegram files)
+                    msg_link = check[0].get('link', check[0].get('link'))
                     run = await app.send_photo(
                         chat_id=original_chat_id,
                         photo=config.TELEGRAM_AUDIO_URL if str(streamtype) == "audio" else config.TELEGRAM_VIDEO_URL,
@@ -551,7 +551,7 @@ class Call(PyTgCalls):
                         reply_markup=InlineKeyboardMarkup(button),
                     )
                     db[chat_id][0]["mystic"] = run
-                    db[chat_id][0]["markup"] = "tg"
+                    db[chat_id][0]["markup"] = "sc"
                 else:
                     img = await get_thumb(videoid,user_id)
                     button = stream_markup(_, chat_id)
@@ -567,7 +567,7 @@ class Call(PyTgCalls):
                         reply_markup=InlineKeyboardMarkup(button),
                     )
                     db[chat_id][0]["mystic"] = run
-                    db[chat_id][0]["markup"] = "stream"
+                    db[chat_id][0]["markup"] = "yt"
 
     async def ping(self):
         pings = []
