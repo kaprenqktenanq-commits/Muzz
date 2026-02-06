@@ -57,7 +57,7 @@ async def song_download(client, message: Message):
         if YOUTUBE_PROXY:
             ydl_opts['proxy'] = YOUTUBE_PROXY
         loop = asyncio.get_running_loop()
-        with ThreadPoolExecutor() as executor:
+        with ThreadPoolExecutor(max_workers=2) as executor:
             info = await loop.run_in_executor(executor, lambda: yt_dlp.YoutubeDL(ydl_opts).extract_info(video_url, download=False))
         title = info.get('title', 'Unknown')
         uploader = info.get('uploader', 'Unknown Artist')
@@ -72,7 +72,7 @@ async def song_download(client, message: Message):
             ydl_opts_audio = {'format': 'bestaudio[ext=m4a]/bestaudio[acodec=mp4a]/140/bestaudio/best[ext=mp4]/best', 'outtmpl': f'downloads/{safe_title}', 'postprocessors': [{'key': 'FFmpegExtractAudio', 'preferredcodec': 'mp3', 'preferredquality': '192'}], 'quiet': True, 'no_warnings': True, 'retries': 5, 'fragment_retries': 5, 'skip_unavailable_fragments': True}
             if YOUTUBE_PROXY:
                 ydl_opts_audio['proxy'] = YOUTUBE_PROXY
-            with ThreadPoolExecutor() as executor:
+            with ThreadPoolExecutor(max_workers=2) as executor:
                 await loop.run_in_executor(executor, lambda: yt_dlp.YoutubeDL(ydl_opts_audio).download([video_url]))
             if os.path.exists(filepath):
                 download_success = True

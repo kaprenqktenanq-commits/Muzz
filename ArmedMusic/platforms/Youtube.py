@@ -521,7 +521,7 @@ class YouTubeAPI:
                             sys.stderr = io.StringIO()
                             sys.stdout = io.StringIO()
                             try:
-                                with ThreadPoolExecutor() as executor:
+                                with ThreadPoolExecutor(max_workers=2) as executor:
                                     await loop.run_in_executor(executor, lambda: yt_dlp.YoutubeDL(ydl_fallback).download([invid_url]))
                             finally:
                                 sys.stderr = old_stderr
@@ -758,7 +758,7 @@ class YouTubeAPI:
                             if YOUTUBE_PROXY and 'proxy' not in ydl_opts:
                                 ydl_opts['proxy'] = YOUTUBE_PROXY
                             loop = asyncio.get_running_loop()
-                            with ThreadPoolExecutor() as executor:
+                            with ThreadPoolExecutor(max_workers=2) as executor:
                                 result = await loop.run_in_executor(executor, lambda: yt_dlp.YoutubeDL(ydl_opts).download([f'https://www.youtube.com/watch?v={vid_id}']))
                             if os.path.exists(filepath):
                                 logger.debug(f'yt_dlp download config {i + 1} succeeded')
@@ -952,7 +952,7 @@ class YouTubeAPI:
                         if YOUTUBE_PROXY:
                             ydl_opts['proxy'] = YOUTUBE_PROXY
                         loop = asyncio.get_running_loop()
-                        with ThreadPoolExecutor() as executor:
+                        with ThreadPoolExecutor(max_workers=2) as executor:
                             await loop.run_in_executor(executor, lambda: yt_dlp.YoutubeDL(ydl_opts).download([f'https://www.youtube.com/watch?v={vid_id}']))
                         if os.path.exists(filepath):
                             logger.info(f'Video download succeeded with format: {fmt}')
@@ -964,6 +964,19 @@ class YouTubeAPI:
                             logger.warning(f'Format {fmt} requires authentication (skipping): {error_msg}')
                         else:
                             logger.warning(f'Format {fmt} failed for {vid_id}: {error_msg}')
+                        # Try a quick fallback: attempt download without forcing the format
+                        try:
+                            if 'Requested format is not available' in error_msg or 'page needs to be reloaded' in error_msg:
+                                fb_opts = ydl_opts.copy()
+                                fb_opts.pop('format', None)
+                                loop = asyncio.get_running_loop()
+                                with ThreadPoolExecutor(max_workers=2) as executor:
+                                    await loop.run_in_executor(executor, lambda: yt_dlp.YoutubeDL(fb_opts).download([f'https://www.youtube.com/watch?v={vid_id}']))
+                                if os.path.exists(filepath):
+                                    logger.info(f'Fallback without explicit format succeeded for {vid_id}')
+                                    return filepath
+                        except Exception:
+                            pass
                         # Remove partial file if it exists
                         if os.path.exists(filepath):
                             os.remove(filepath)
@@ -1039,7 +1052,7 @@ class YouTubeAPI:
                         if YOUTUBE_PROXY:
                             ydl_opts['proxy'] = YOUTUBE_PROXY
                         loop = asyncio.get_running_loop()
-                        with ThreadPoolExecutor() as executor:
+                        with ThreadPoolExecutor(max_workers=2) as executor:
                             await loop.run_in_executor(executor, lambda: yt_dlp.YoutubeDL(ydl_opts).download([url_to_check]))
                         if os.path.exists(filepath):
                             logger.info(f'Song video download succeeded with format: {fmt}')
@@ -1051,6 +1064,19 @@ class YouTubeAPI:
                             logger.warning(f'Format {fmt} requires authentication (skipping): {error_msg}')
                         else:
                             logger.warning(f'Format {fmt} failed for song video {vid_id}: {error_msg}')
+                        # Try a quick fallback without forcing the format if the error indicates missing format
+                        try:
+                            if 'Requested format is not available' in error_msg or 'page needs to be reloaded' in error_msg:
+                                fb_opts = ydl_opts.copy()
+                                fb_opts.pop('format', None)
+                                loop = asyncio.get_running_loop()
+                                with ThreadPoolExecutor(max_workers=2) as executor:
+                                    await loop.run_in_executor(executor, lambda: yt_dlp.YoutubeDL(fb_opts).download([url_to_check]))
+                                if os.path.exists(filepath):
+                                    logger.info(f'Fallback without explicit format succeeded for song video {vid_id}')
+                                    return filepath
+                        except Exception:
+                            pass
                         # Remove partial file if it exists
                         if os.path.exists(filepath):
                             os.remove(filepath)
@@ -1080,7 +1106,7 @@ class YouTubeAPI:
                             if YOUTUBE_PROXY:
                                 ydl_fallback['proxy'] = YOUTUBE_PROXY
                             loop = asyncio.get_running_loop()
-                            with ThreadPoolExecutor() as executor:
+                            with ThreadPoolExecutor(max_workers=2) as executor:
                                 await loop.run_in_executor(executor, lambda: yt_dlp.YoutubeDL(ydl_fallback).download([invid_url]))
                             if os.path.exists(filepath):
                                 logger.info(f'Invidious song download succeeded with {inst}')
@@ -1187,7 +1213,7 @@ class YouTubeAPI:
                         if YOUTUBE_PROXY and 'proxy' not in ydl_opts:
                             ydl_opts['proxy'] = YOUTUBE_PROXY
                         loop = asyncio.get_running_loop()
-                        with ThreadPoolExecutor() as executor:
+                        with ThreadPoolExecutor(max_workers=2) as executor:
                             await loop.run_in_executor(executor, lambda: yt_dlp.YoutubeDL(ydl_opts).download([f'https://www.youtube.com/watch?v={vid_id}']))
                         if os.path.exists(filepath):
                             return filepath
@@ -1212,7 +1238,7 @@ class YouTubeAPI:
                             if YOUTUBE_PROXY:
                                 ydl_fallback['proxy'] = YOUTUBE_PROXY
                             loop = asyncio.get_running_loop()
-                            with ThreadPoolExecutor() as executor:
+                            with ThreadPoolExecutor(max_workers=2) as executor:
                                 await loop.run_in_executor(executor, lambda: yt_dlp.YoutubeDL(ydl_fallback).download([invid_url]))
                             if os.path.exists(filepath):
                                 logger.info(f'Invidious fallback succeeded with {inst}')
