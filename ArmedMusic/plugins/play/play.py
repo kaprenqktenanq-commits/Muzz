@@ -210,8 +210,10 @@ async def play_commnd(client, message: Message, _, chat_id, video, channel, play
         query = clean_query(query)
         try:
             details, track_id = await YouTube.track(query)
-        except:
-            return await mystic.edit_text(_['play_3'])
+        except Exception as e:
+            logger.error(f'Track search failed for "{query}": {str(e)}')
+            error_msg = str(e) if "ꜰᴀɪʟᴇᴅ" in str(e) else _['play_3']
+            return await mystic.edit_text(error_msg)
         streamtype = 'youtube'
     if str(playmode) == 'Direct':
         if not plist_type:

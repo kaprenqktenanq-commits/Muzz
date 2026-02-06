@@ -9,6 +9,7 @@ import sys
 import string
 from concurrent.futures import ThreadPoolExecutor
 from typing import Union
+import aiohttp
 import requests
 import yt_dlp
 from pyrogram.enums import MessageEntityType
@@ -267,19 +268,53 @@ class YouTubeAPI:
             link = link.split('?si=')[0]
         elif '&si=' in link:
             link = link.split('&si=')[0]
-        results = VideosSearch(link, limit=1)
-        res = await results.next()
-        results_list = res['result']
-        if not results_list:
-            raise ValueError("ꜰᴀɪʟᴇᴅ ᴛᴏ ꜰᴇᴛᴄʜ ᴛʀᴀᴄᴋ ᴅᴇᴛᴀɪʟs. ᴛʀʏ ᴘʟᴀʏɪɴɢ ᴀɴʏ ᴏᴛʜᴇʀ.")
-        for result in results_list:
-            title = result['title']
-            duration_min = result['duration']
-            vidid = result['id']
-            yturl = result['link']
-            thumbnail = result['thumbnails'][0]['url'].split('?')[0]
-        track_details = {'title': title, 'link': yturl, 'vidid': vidid, 'duration_min': duration_min, 'thumb': thumbnail}
-        return (track_details, vidid)
+        
+        # Try primary search method
+        try:
+            results = VideosSearch(link, limit=1)
+            res = await results.next()
+            results_list = res['result']
+            if results_list:
+                for result in results_list:
+                    title = result['title']
+                    duration_min = result['duration']
+                    vidid = result['id']
+                    yturl = result['link']
+                    thumbnail = result['thumbnails'][0]['url'].split('?')[0]
+                track_details = {'title': title, 'link': yturl, 'vidid': vidid, 'duration_min': duration_min, 'thumb': thumbnail}
+                return (track_details, vidid)
+        except Exception as e:
+            logger.debug(f'Primary search failed for "{link}": {e}')
+        
+        # Fallback: Try Invidious instances if primary search fails
+        if YOUTUBE_INVIDIOUS_INSTANCES:
+            for _ in range(min(3, len(YOUTUBE_INVIDIOUS_INSTANCES))):
+                try:
+                    inst = self._next_invidious()
+                    search_url = f"{inst}/api/v1/search?q={link.replace(' ', '+')}&type=video"
+                    async with aiohttp.ClientSession() as session:
+                        async with session.get(search_url, timeout=aiohttp.ClientTimeout(total=10)) as resp:
+                            if resp.status == 200:
+                                data = await resp.json()
+                                if data and isinstance(data, list) and len(data) > 0:
+                                    result = data[0]
+                                    title = result.get('title', 'Unknown')
+                                    vid_id = result.get('videoId', '')
+                                    duration = result.get('lengthSeconds', 0)
+                                    thumbnail = f"{inst}/vi/{vid_id}/maxresdefault.jpg"
+                                    
+                                    # Convert duration to min:sec format
+                                    duration_min = f"{int(int(duration) / 60)}:{int(int(duration) % 60):02d}"
+                                    
+                                    yturl = f"https://www.youtube.com/watch?v={vid_id}"
+                                    track_details = {'title': title, 'link': yturl, 'vidid': vid_id, 'duration_min': duration_min, 'thumb': thumbnail}
+                                    logger.info(f'Invidious search succeeded for "{link}" using {inst}')
+                                    return (track_details, vid_id)
+                except Exception as e:
+                    logger.debug(f'Invidious search failed with {inst}: {e}')
+                    continue
+        
+        raise ValueError("ꜰᴀɪʟᴇᴅ ᴛᴏ ꜰᴇᴛᴄʜ ᴛʀᴀᴄᴋ ᴅᴇᴛᴀɪʟs. ᴛʀʏ ᴘʟᴀʏɪɴɢ ᴀɴʏ ᴏᴛʜᴇʀ.")
 
     async def formats(self, link: str, videoid: Union[bool, str]=None):
         if videoid:
