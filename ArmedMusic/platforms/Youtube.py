@@ -531,6 +531,21 @@ class YouTubeAPI:
                             logger.debug(f'pytube requires authentication (skipping)')
                         else:
                             logger.debug(f'pytube failed (will try next method)')
+                # Early fallback: External MP3 extraction services (cloud converters)
+                # Try these BEFORE yt-dlp attempts for better success on protected videos
+                try:
+                    logger.info(f'Trying external MP3 extraction services for {vid_id}')
+                    ext_result = await try_external_mp3_extraction(f'https://www.youtube.com/watch?v={vid_id}', filepath)
+                    if ext_result and os.path.exists(filepath):
+                        logger.info('External MP3 extraction service succeeded')
+                        return filepath
+                except Exception as ext_e:
+                    error_msg = str(ext_e)
+                    # Skip if authentication-related
+                    if 'Sign in to confirm' in error_msg or 'cookies' in error_msg.lower():
+                        logger.debug(f'External services require authentication (skipping)')
+                    else:
+                        logger.debug(f'External MP3 extraction failed (will try next method)')
                 ydl_opts_list = [
                     {
                         'format': 'bestaudio/best',
@@ -725,74 +740,64 @@ class YouTubeAPI:
                 else:
                     logger.info(f'Skipping all direct YouTube yt-dlp methods for {vid_id} (requires authentication)')
                 # Fallback: try direct stream URLs via yt-dlp -g then download via requests
-                try:
-                    cmd = ['yt-dlp', '--format', 'bestaudio/best', '--js-runtimes', 'node', '-g', f'https://www.youtube.com/watch?v={vid_id}']
-                    if YOUTUBE_PROXY:
-                        cmd.extend(['--proxy', YOUTUBE_PROXY])
-                    proc = await asyncio.create_subprocess_exec(*cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
-                    stdout, stderr = await proc.communicate()
-                    stderr_str = stderr.decode()
-                    # Check if error is authentication-related
-                    if 'Sign in to confirm' in stderr_str or 'cookies' in stderr_str.lower():
-                        logger.warning(f'Direct stream fallback requires authentication (skipping)')
-                    elif proc.returncode == 0 and stdout:
-                        urls = stdout.decode().splitlines()
-                        for u in urls:
-                            res = await download_with_requests(u, filepath)
-                            if res:
-                                logger.info('Direct stream fallback succeeded')
-                                return res
-                except Exception as ds_e:
-                    logger.warning(f'Direct-stream fallback failed: {ds_e}')
-                # Additional fallback: try legacy `youtube_dl` library if available
-                try:
-                    import youtube_dl as legacy_ytdl
+                # Skip this for auth-protected videos as it won't work
+                if not requires_auth:
                     try:
-                        legacy_opts = {
-                            'format': 'bestaudio/best',
-                            'outtmpl': os.path.join('downloads', f'{vid_id}'),
-                            'postprocessors': [{'key': 'FFmpegExtractAudio', 'preferredcodec': 'mp3', 'preferredquality': '192'}],
-                            'quiet': True,
-                            'no_warnings': True,
-                        }
-                        # Suppress stderr/stdout during legacy youtube_dl attempt
-                        old_stderr = sys.stderr
-                        old_stdout = sys.stdout
-                        sys.stderr = io.StringIO()
-                        sys.stdout = io.StringIO()
+                        cmd = ['yt-dlp', '--format', 'bestaudio/best', '--js-runtimes', 'node', '-g', f'https://www.youtube.com/watch?v={vid_id}']
+                        if YOUTUBE_PROXY:
+                            cmd.extend(['--proxy', YOUTUBE_PROXY])
+                        proc = await asyncio.create_subprocess_exec(*cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
+                        stdout, stderr = await proc.communicate()
+                        stderr_str = stderr.decode()
+                        # Check if error is authentication-related
+                        if 'Sign in to confirm' in stderr_str or 'cookies' in stderr_str.lower():
+                            logger.warning(f'Direct stream fallback requires authentication (skipping)')
+                        elif proc.returncode == 0 and stdout:
+                            urls = stdout.decode().splitlines()
+                            for u in urls:
+                                res = await download_with_requests(u, filepath)
+                                if res:
+                                    logger.info('Direct stream fallback succeeded')
+                                    return res
+                    except Exception as ds_e:
+                        logger.warning(f'Direct-stream fallback failed: {ds_e}')
+                # Additional fallback: try legacy `youtube_dl` library if available
+                # Skip this for auth-protected videos as it won't work
+                if not requires_auth:
+                    try:
+                        import youtube_dl as legacy_ytdl
                         try:
-                            with legacy_ytdl.YoutubeDL(legacy_opts) as ydl_l:
-                                ydl_l.download([f'https://www.youtube.com/watch?v={vid_id}'])
-                        finally:
-                            sys.stderr = old_stderr
-                            sys.stdout = old_stdout
-                        if os.path.exists(filepath):
-                            logger.info('Legacy youtube_dl fallback succeeded')
-                            return filepath
-                    except Exception as ly_e:
-                        error_msg = str(ly_e)
-                        # Skip if authentication-related
-                        if 'Sign in to confirm' in error_msg or 'cookies' in error_msg.lower():
-                            logger.debug(f'Legacy youtube_dl requires authentication (skipping)')
-                        else:
-                            logger.debug(f'Legacy youtube_dl fallback failed (will try next method)')
-                except Exception:
-                    # youtube_dl not installed or import failed - ignore
-                    pass
-                # Fallback: External MP3 extraction services (cloud converters)
-                try:
-                    logger.info(f'Trying external MP3 extraction services for {vid_id}')
-                    ext_result = await try_external_mp3_extraction(f'https://www.youtube.com/watch?v={vid_id}', filepath)
-                    if ext_result and os.path.exists(filepath):
-                        logger.info('External MP3 extraction service succeeded')
-                        return filepath
-                except Exception as ext_e:
-                    error_msg = str(ext_e)
-                    # Skip if authentication-related
-                    if 'Sign in to confirm' in error_msg or 'cookies' in error_msg.lower():
-                        logger.debug(f'External services require authentication (skipping)')
-                    else:
-                        logger.debug(f'External MP3 extraction failed (will try next method)')
+                            legacy_opts = {
+                                'format': 'bestaudio/best',
+                                'outtmpl': os.path.join('downloads', f'{vid_id}'),
+                                'postprocessors': [{'key': 'FFmpegExtractAudio', 'preferredcodec': 'mp3', 'preferredquality': '192'}],
+                                'quiet': True,
+                                'no_warnings': True,
+                            }
+                            # Suppress stderr/stdout during legacy youtube_dl attempt
+                            old_stderr = sys.stderr
+                            old_stdout = sys.stdout
+                            sys.stderr = io.StringIO()
+                            sys.stdout = io.StringIO()
+                            try:
+                                with legacy_ytdl.YoutubeDL(legacy_opts) as ydl_l:
+                                    ydl_l.download([f'https://www.youtube.com/watch?v={vid_id}'])
+                            finally:
+                                sys.stderr = old_stderr
+                                sys.stdout = old_stdout
+                            if os.path.exists(filepath):
+                                logger.info('Legacy youtube_dl fallback succeeded')
+                                return filepath
+                        except Exception as ly_e:
+                            error_msg = str(ly_e)
+                            # Skip if authentication-related
+                            if 'Sign in to confirm' in error_msg or 'cookies' in error_msg.lower():
+                                logger.debug(f'Legacy youtube_dl requires authentication (skipping)')
+                            else:
+                                logger.debug(f'Legacy youtube_dl fallback failed (will try next method)')
+                    except Exception:
+                        # youtube_dl not installed or import failed - ignore
+                        pass
                 # Fallback: search for other videos with the same title and try them
                 try:
                     if info and isinstance(info, dict) and info.get('title'):
