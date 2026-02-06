@@ -1,5 +1,6 @@
 import random
 import string
+import os
 from pyrogram import filters
 from pyrogram.types import InlineKeyboardMarkup, InputMediaPhoto, Message, InlineKeyboardButton
 from pyrogram.errors.exceptions.bad_request_400 import MessageIdInvalid
@@ -416,6 +417,46 @@ async def add_bot_to_chat(client, CallbackQuery, _):
             await CallbackQuery.answer(_['error'] if 'error' in _ else 'Failed to open link.', show_alert=True)
         except:
             pass
+
+
+@app.on_callback_query(filters.regex('DownloadTelegramFile') & ~BANNED_USERS)
+@languageCB
+async def download_telegram_file(client, CallbackQuery, _):
+    from ArmedMusic.utils.inline import telegram_download_cache
+    user_id = CallbackQuery.from_user.id
+    
+    try:
+        await CallbackQuery.answer('📥 Sending file...', show_alert=False)
+    except:
+        pass
+    
+    if user_id not in telegram_download_cache:
+        await CallbackQuery.message.reply_text('❌ File not found in cache.')
+        return
+    
+    try:
+        file_data = telegram_download_cache[user_id]
+        file_path = file_data.get('file_path')
+        file_name = file_data.get('file_name', 'audio')
+        
+        if not file_path or not os.path.exists(file_path):
+            await CallbackQuery.message.reply_text('❌ File not found.')
+            return
+        
+        # Determine if it's audio or video based on file extension
+        file_ext = os.path.splitext(file_path)[1].lower()
+        is_audio = file_ext in ['.mp3', '.m4a', '.aac', '.wav', '.flac', '.ogg']
+        
+        if is_audio:
+            await CallbackQuery.message.reply_audio(audio=file_path, caption='@ArmedMusicBot', title=file_name)
+        else:
+            await CallbackQuery.message.reply_video(video=file_path, caption='@ArmedMusicBot')
+    except Exception as e:
+        await CallbackQuery.message.reply_text(f'❌ Error sending file: {str(e)[:100]}')
+    finally:
+        # Clean up cache
+        if user_id in telegram_download_cache:
+            del telegram_download_cache[user_id]
 
 
 @app.on_callback_query(filters.regex('DownloadTrack') & ~BANNED_USERS)

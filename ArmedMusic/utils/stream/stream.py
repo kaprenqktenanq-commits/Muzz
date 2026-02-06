@@ -8,7 +8,7 @@ from ArmedMusic.core.call import Anony
 from ArmedMusic.misc import db
 from ArmedMusic.utils.database import add_active_video_chat, is_active_chat
 from ArmedMusic.utils.exceptions import AssistantErr
-from ArmedMusic.utils.inline import aq_markup, close_markup, stream_markup
+from ArmedMusic.utils.inline import aq_markup, close_markup, stream_markup, stream_markup_telegram, telegram_download_cache
 from ArmedMusic.utils.pastebin import AnonyBin
 from ArmedMusic.utils.stream.queue import put_queue, put_queue_index
 from ArmedMusic.utils.thumbnails import get_thumb
@@ -188,7 +188,9 @@ async def stream(_, mystic, user_id, result, chat_id, user_name, original_chat_i
             await put_queue(chat_id, original_chat_id, file_path, title, duration_min, user_name, streamtype, user_id, 'video' if video else 'audio', forceplay=forceplay)
             if video:
                 await add_active_video_chat(chat_id)
-            button = stream_markup(_, chat_id)
+            # Save file info for download button
+            telegram_download_cache[user_id] = {'file_path': file_path, 'file_name': title}
+            button = stream_markup_telegram(_, chat_id, user_id)
             try:
                 run = await app.send_photo(chat_id, photo=config.TELEGRAM_VIDEO_URL if video else config.TELEGRAM_AUDIO_URL, caption=_['stream_1'].format(link, title, duration_min, user_name), reply_markup=InlineKeyboardMarkup(button))
                 db[chat_id][0]['mystic'] = run
