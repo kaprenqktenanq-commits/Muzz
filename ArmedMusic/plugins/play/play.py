@@ -38,7 +38,7 @@ async def play_commnd(client, message: Message, _, chat_id, video, channel, play
             return await mystic.edit_text(_['play_6'].format(config.DURATION_LIMIT_MIN, app.mention))
         file_path = await Telegram.get_filepath(audio=audio_telegram)
         if await Telegram.download(_, message, mystic, file_path):
-            message_link = await Telegram.get_link(message)
+            message_link = await Telegram.get_link(message.reply_to_message)
             file_name = await Telegram.get_filename(audio_telegram, audio=True)
             dur = await Telegram.get_duration(audio_telegram, file_path)
             details = {'title': file_name, 'link': message_link, 'path': file_path, 'dur': dur}
@@ -62,7 +62,7 @@ async def play_commnd(client, message: Message, _, chat_id, video, channel, play
             return await mystic.edit_text(_['play_8'])
         file_path = await Telegram.get_filepath(video=video_telegram)
         if await Telegram.download(_, message, mystic, file_path):
-            message_link = await Telegram.get_link(message)
+            message_link = await Telegram.get_link(message.reply_to_message)
             file_name = await Telegram.get_filename(video_telegram)
             dur = await Telegram.get_duration(video_telegram, file_path)
             details = {'title': file_name, 'link': message_link, 'path': file_path, 'dur': dur}
