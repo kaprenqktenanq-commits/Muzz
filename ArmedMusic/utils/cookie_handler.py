@@ -47,14 +47,12 @@ def fix_cookies_format():
 def validate_cookies():
     """
     Validates that cookies file exists and has valid content.
-    Returns True if cookies are available and valid.
+    Returns True if cookies are available and valid, False otherwise.
+    Operates silently - logs only on successful validation.
     """
     ensure_cookies_directory()
     
     if not os.path.exists(COOKIES_FILE):
-        logger.warning(f'Cookies file not found at {COOKIES_FILE}')
-        logger.warning('YouTube downloads may fail without authentication cookies')
-        logger.warning('See: https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp')
         return False
     
     try:
@@ -62,7 +60,6 @@ def validate_cookies():
             content = f.read().strip()
         
         if not content:
-            logger.warning('Cookies file is empty')
             return False
         
         # Check if file has valid Netscape cookie format (has at least header or data)
@@ -70,7 +67,6 @@ def validate_cookies():
         has_content = any(line.strip() and not line.strip().startswith('#') for line in lines)
         
         if not has_content:
-            logger.warning('Cookies file appears to be empty (no valid cookie entries)')
             return False
         
         # Fix format if needed
@@ -79,7 +75,6 @@ def validate_cookies():
         logger.info('YouTube cookies validated successfully')
         return True
     except Exception as e:
-        logger.error(f'Error validating cookies: {e}')
         return False
 
 
