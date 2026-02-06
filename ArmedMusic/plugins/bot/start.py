@@ -29,6 +29,11 @@ async def start_pm(client, message: Message, _):
             keyboard = help_pannel(_, is_sudo)
             return await message.reply_photo(photo=random.choice(config.START_IMG_URL), caption=_['help_1'], reply_markup=keyboard)
         if name[0:3] == 'inf':
+            if name == 'info_telegram':
+                # Handle Telegram file info request
+                key = InlineKeyboardMarkup([[InlineKeyboardButton(text='⬇️ Download', callback_data=f"DownloadTelegramFile|{message.from_user.id}")]])
+                await app.send_message(chat_id=message.chat.id, text='ᴛᴇʟᴇɢʀᴀᴍ ᴀᴜᴅɪᴏ/ᴠɪᴅᴇᴏ ɪɴғᴏʀᴍᴀᴛɪᴏɴ', reply_markup=key)
+                return await app.send_message(chat_id=config.LOGGER_ID, text=f'{message.from_user.mention} ᴊᴜsᴛ sᴛᴀʀᴛᴇᴅ ᴛʜᴇ ʙᴏᴛ ᴛᴏ ᴄʜᴇᴄᴋ <b>ᴛᴇʟᴇɢʀᴀᴍ ғɪʟᴇ ɪɴғᴏʀᴍᴀᴛɪᴏɴ</b>.\n\n<b>ᴜsᴇʀ ɪᴅ :</b> <code>{message.from_user.id}</code>\n<b>ᴜsᴇʀɴᴀᴍᴇ :</b> @{message.from_user.username}')
             m = await message.reply_text('🔎')
             query = str(name).replace('info_', '', 1)
             query = f'https://www.youtube.com/watch?v={query}'
